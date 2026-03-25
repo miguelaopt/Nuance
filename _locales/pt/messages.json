@@ -1,0 +1,14 @@
+{
+    "appName": {
+      "message": "Nuance",
+      "description": "Nome da extensão."
+    },
+    "appDescription": {
+      "message": "Fura a tua bolha de informação. Obtém contra-argumentos instantâneos para qualquer artigo de opinião.",
+      "description": "Descrição da extensão."
+    },
+    "actionTitle": {
+      "message": "Ver o Nuance",
+      "description": "Título mostrado ao passar o rato no ícone."
+    }
+  }

@@ -1,0 +1,14 @@
+{
+    "appName": {
+      "message": "Nuance",
+      "description": "The name of the extension."
+    },
+    "appDescription": {
+      "message": "Burst your information bubble. Get instant counter-arguments for any opinion article.",
+      "description": "The description of the extension."
+    },
+    "actionTitle": {
+      "message": "See Nuance",
+      "description": "The title shown when hovering over the extension icon."
+    }
+  }
