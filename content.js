@@ -116,10 +116,41 @@ function injectNuanceUI() {
 
 // Vamos testar a injeção do UI mal a página carregue, para vermos o design
 // (Mais tarde, isto só ativa quando a IA responder)
+// --- TESTE FORÇADO: Injetar UI passado 2 segundos ---
+// --- Fase 3: A Ligação ao Cérebro (A magia acontece aqui) ---
+
 window.addEventListener('load', () => {
+    // 1. Lemos a notícia
     const text = extractCleanText();
-    if (text.length > 500) { // Só injeta se parecer ser um artigo real
-        injectNuanceUI();
-        console.log("✅ Artigo detetado. UI do Nuance injetado (Apple-like structure).");
+    
+    // Se o texto for longo o suficiente (parece mesmo um artigo)
+    if (text.length > 500) {
+        console.log("Notícia detetada! A injetar UI e a pedir ajuda à IA...");
+        
+        // 2. Mostramos o painel "Analyzing article..."
+        injectNuanceUI(); 
+        
+        // 3. Enviamos o texto em segredo para o background.js
+        chrome.runtime.sendMessage(
+            { action: "analyzeText", text: text },
+            (response) => {
+                console.log("📥 Resposta chegou ao Content Script:", response);
+                
+                // Aceder ao Shadow DOM para encontrar o sítio do texto
+                const card = document.getElementById('nuance-container');
+                if (card && card.shadowRoot) {
+                    const contentDiv = card.shadowRoot.querySelector('.nuance-content');
+                    
+                    if (response && response.success) {
+                        // Formatar para HTML e remover as aspas que a IA às vezes mete
+                        contentDiv.innerHTML = response.arguments.replace(/\n/g, '<br>');
+                    } else {
+                        contentDiv.innerHTML = "<span style='color:red;'>Error: " + (response ? response.error : "Timeout") + "</span>";
+                    }
+                }
+            }
+        );
+    } else {
+        console.log("Texto muito curto. O Nuance vai ficar a dormir nesta página.");
     }
 });
