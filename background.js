@@ -2,6 +2,26 @@
 
 console.log("🧠 Nuance Service Worker initializing…");
 
+// Cria o botão direito quando a extensão é instalada
+chrome.runtime.onInstalled.addListener(() => {
+    chrome.contextMenus.create({
+        id: "nuance-analyze-selection",
+        title: "Nuance: Verify this fact",
+        contexts: ["selection"] // Só aparece se tiveres texto selecionado
+    });
+});
+
+// Ouve quando clicas no botão direito
+chrome.contextMenus.onClicked.addListener((info, tab) => {
+    if (info.menuItemId === "nuance-analyze-selection") {
+        // Envia o texto sublinhado para o content.js da página atual
+        chrome.tabs.sendMessage(tab.id, {
+            action: "analyzeSelection",
+            text: info.selectionText
+        });
+    }
+});
+
 try {
     importScripts('env.js');
     console.log("🔐 env.js loaded successfully.");
@@ -37,31 +57,29 @@ async function askGroq(articleText, language = 'auto') {
 
     const cleanedText = articleText.substring(0, 3000);
 
-    const langInstruction = language === 'auto'
-        ? 'Respond in the same language as the article.'
-        : `Respond in ${language}.`;
+    // REGRA DE IDIOMA BLINDADA (Acaba aqui a confusão)
+    let langRule = "";
+    if (language === 'auto' || language === 'Auto') {
+        langRule = "Detect the primary language of the 'Article' provided below. You MUST write the 'arguments' and 'biasReason' in THAT exact detected language.";
+    } else {
+        langRule = `You MUST write the 'arguments' and 'biasReason' ENTIRELY in ${language}. DO NOT output any other language.`;
+    }
 
-    const systemPrompt = `You are 'Nuance', a critical thinking assistant that helps readers escape information bubbles.
+    const systemPrompt = `You are 'Nuance', a professional fact-checker.
+Analyze the article and return ONLY a valid JSON object. No markdown.
 
-Analyze the article and return ONLY a valid JSON object (no markdown, no backticks, no preamble) with this exact structure:
 {
-  "arguments": [
-    "First counter-argument as a complete sentence.",
-    "Second counter-argument as a complete sentence.",
-    "Third counter-argument as a complete sentence."
-  ],
-  "sources": [
-    { "name": "Publication Name", "url": "https://homepage-url.com" },
-    { "name": "Publication Name 2", "url": "https://homepage-url2.com" }
-  ]
+  "biasScore": 85,
+  "biasReason": "Short explanation of the bias score.",
+  "arguments": ["Arg 1", "Arg 2", "Arg 3"],
+  "sources": [{ "name": "Source Name", "url": "https://url.com" }]
 }
 
-Rules:
-- Arguments must be short (1-2 sentences), logical, factual counter-points to the article's main thesis.
-- Sources must be 2-3 credible, well-known publications highly relevant to the article's topic.
-- Use only real publication homepages (Reuters, BBC, AP News, The Guardian, Le Monde, Público, El País, Der Spiegel, etc.).
-- Do NOT invent URLs. Only use homepage URLs you are certain of.
-- ${langInstruction}`;
+CRITICAL RULES:
+1. BIAS METER: Evaluate the article's objectivity. 0 = Completely neutral/factual. 100 = Extremely biased/propaganda. Provide the integer score and a 1-sentence reason.
+2. TRANSLATION: ${langRule}
+3. SOURCE ORIGIN: The "sources" must match the culture/country of the ORIGINAL article.
+4. JSON ONLY.`;
 
     const response = await fetch(url, {
         method: "POST",
@@ -71,29 +89,20 @@ Rules:
         },
         body: JSON.stringify({
             model: "llama-3.3-70b-versatile",
+            response_format: { type: "json_object" },
             messages: [
                 { role: "system", content: systemPrompt },
                 { role: "user", content: `Article:\n\n${cleanedText}` }
             ],
-            temperature: 0.2,
-            max_tokens: 700
+            temperature: 0.1 // Mantemos baixo para não haver alucinações
         })
     });
 
-    if (!response.ok) {
-        const errorBody = await response.json();
-        console.error("Groq API Error Detail:", errorBody);
-        throw new Error(`Groq API Error ${response.status}: ${errorBody.error?.message || 'Unknown error'}`);
-    }
-
+    if (!response.ok) throw new Error(`Groq API Error ${response.status}`);
     const data = await response.json();
-    const content = data.choices[0].message.content.trim();
+    let content = data.choices[0].message.content.trim();
+    content = content.replace(/^```json\s*/i, '').replace(/\s*```$/i, '').trim();
 
-    try {
-        return JSON.parse(content);
-    } catch {
-        // Fallback: treat raw text as plain arguments (no sources)
-        console.warn("⚠️ Could not parse JSON response. Using raw text fallback.");
-        return { arguments: content, sources: [] };
-    }
+    try { return JSON.parse(content); } 
+    catch (e) { return { arguments: content, sources: [], biasScore: 50, biasReason: "Analysis failed." }; }
 }

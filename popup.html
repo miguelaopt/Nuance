@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nuance</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root, html.theme-light {
+            --bg:          #ffffff;
+            --bg-2:        #f5f5f7;
+            --bg-3:        #e8e8ed;
+            --text-1:      #1d1d1f;
+            --text-2:      #6e6e73;
+            --text-3:      #aeaeb2;
+            --sep:         rgba(0, 0, 0, 0.07);
+            --blue:        #0071e3;
+            --radius-btn:  8px;
+        }
+
+        html.theme-dark {
+            --bg:        #1c1c1e;
+            --bg-2:      #2c2c2e;
+            --bg-3:      #3a3a3c;
+            --text-1:    #f5f5f7;
+            --text-2:    #8e8e93;
+            --text-3:    #636366;
+            --sep:       rgba(255, 255, 255, 0.08);
+            --blue:      #2997ff;
+        }
+
+        html, body {
+            background: var(--bg);
+            color: var(--text-1);
+            font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+            width: 340px;
+            overflow: hidden;
+            border-radius: 18px; 
+            border: 0.5px solid var(--sep);
+        }
+
+        /* Header */
+        .hd {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 18px 18px 16px;
+            border-bottom: 0.5px solid var(--sep);
+        }
+        .hd-left { display: flex; flex-direction: column; gap: 2px; }
+        .app-name { font-size: 17px; font-weight: 700; letter-spacing: -0.5px; color: var(--text-1); }
+        .app-tagline { font-size: 11.5px; color: var(--text-2); letter-spacing: -0.1px; }
+        .ver-pill { font-size: 10px; font-weight: 600; color: var(--text-3); background: var(--bg-2); padding: 3px 9px; border-radius: 20px; letter-spacing: 0.1px; align-self: flex-start; }
+
+        /* Tabs / Segmented Control */
+        .segmented-control { display: flex; background: var(--bg-2); padding: 3px; margin: 14px 18px 0; border-radius: 8px; border: 0.5px solid var(--sep); }
+        .seg-btn { flex: 1; text-align: center; padding: 6px 0; font-size: 12px; font-weight: 500; color: var(--text-2); border-radius: 6px; cursor: pointer; border: none; background: transparent; font-family: inherit; transition: all 0.2s ease; }
+        .seg-btn.active { background: var(--bg); color: var(--text-1); box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+
+        /* Views */
+        .view { display: none; }
+        .view.active { display: block; }
+
+        /* Section */
+        .section { padding: 14px 18px; border-bottom: 0.5px solid var(--sep); }
+        .section-label { font-size: 10.5px; font-weight: 600; color: var(--text-3); letter-spacing: 0.7px; text-transform: uppercase; margin-bottom: 10px; }
+
+        /* Theme Toggle */
+        .theme-row { display: flex; gap: 6px; }
+        .theme-opt { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 5px; padding: 10px 6px 9px; border-radius: var(--radius-btn); border: 0.5px solid var(--sep); background: var(--bg-2); color: var(--text-2); font-size: 11.5px; font-weight: 500; font-family: inherit; cursor: pointer; transition: all 0.14s ease; }
+        .theme-opt .t-icon { font-size: 16px; line-height: 1; }
+        .theme-opt:hover:not(.active) { background: var(--bg-3); }
+        .theme-opt.active { background: var(--blue); border-color: var(--blue); color: #fff; }
+
+        /* Language */
+        .lang-wrap { position: relative; }
+        .lang-select { width: 100%; padding: 10px 36px 10px 12px; border: 0.5px solid var(--sep); border-radius: var(--radius-btn); background: var(--bg-2); color: var(--text-1); font-size: 13.5px; font-weight: 400; font-family: inherit; cursor: pointer; appearance: none; -webkit-appearance: none; outline: none; transition: border-color 0.14s ease; }
+        .lang-select:focus { border-color: var(--blue); }
+        .lang-chevron { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); pointer-events: none; color: var(--text-3); font-size: 11px; }
+
+        /* Pro Card */
+        .pro-wrap { padding: 14px 14px 16px; }
+        .pro-card { background: linear-gradient(150deg, #0a0a10 0%, #111118 35%, #171330 65%, #1a1040 100%); border-radius: 20px; padding: 18px 18px 16px; position: relative; overflow: hidden; }
+        .pro-card::before { content: ''; position: absolute; top: -50px; right: -50px; width: 140px; height: 140px; background: radial-gradient(circle, rgba(120,80,255,0.28) 0%, transparent 70%); pointer-events: none; }
+        .pro-card::after { content: ''; position: absolute; bottom: -40px; left: -30px; width: 110px; height: 110px; background: radial-gradient(circle, rgba(0,100,255,0.22) 0%, transparent 70%); pointer-events: none; }
+        .pro-badge { display: inline-flex; align-items: center; gap: 4px; font-size: 9.5px; font-weight: 700; letter-spacing: 1.4px; text-transform: uppercase; color: #f5c842; background: rgba(245,200,66,0.13); border: 0.5px solid rgba(245,200,66,0.22); padding: 3px 9px; border-radius: 20px; margin-bottom: 10px; }
+        .pro-badge::before { content: '✦'; font-size: 7px; }
+        .pro-title { font-size: 18px; font-weight: 700; color: #ffffff; letter-spacing: -0.5px; margin-bottom: 3px; }
+        .pro-sub { font-size: 12px; color: rgba(255, 255, 255, 0.42); margin-bottom: 14px; line-height: 1.45; }
+        .pro-feats { list-style: none; display: flex; flex-direction: column; gap: 6px; margin-bottom: 16px; }
+        .pro-feats li { display: flex; align-items: center; gap: 9px; font-size: 12.5px; color: rgba(255, 255, 255, 0.72); }
+        .feat-check { width: 16px; height: 16px; border-radius: 50%; background: rgba(255, 255, 255, 0.08); display: flex; align-items: center; justify-content: center; flex-shrink: 0; color: #4cd97b; font-size: 9px; font-weight: 700; }
+        .pro-cta { width: 100%; display: flex; align-items: center; justify-content: space-between; padding: 12px 14px; background: linear-gradient(90deg, #1560d4, #2b86f5); border: none; border-radius: 13px; color: #fff; font-family: inherit; font-size: 14px; font-weight: 600; letter-spacing: -0.2px; cursor: pointer; transition: opacity 0.13s ease, transform 0.1s ease; }
+        .pro-cta:hover { opacity: 0.88; }
+        .pro-cta:active { transform: scale(0.98); }
+        .pro-price { font-size: 11px; font-weight: 500; opacity: 0.72; }
+
+        /* History */
+        #view-history { padding: 10px 0; }
+        .history-item { display: block; padding: 12px 18px; border-bottom: 0.5px solid var(--sep); text-decoration: none; transition: background 0.15s ease; }
+        .history-item:hover { background: var(--bg-2); }
+        .history-meta { font-size: 10px; color: var(--text-2); margin-bottom: 5px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+        .history-title { font-size: 13px; font-weight: 500; color: var(--text-1); line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+    </style>
+</head>
+<body>
+
+    <div class="hd">
+        <div class="hd-left">
+            <div class="app-name">Nuance</div>
+            <div class="app-tagline">Think beyond the headline</div>
+        </div>
+        <div class="ver-pill">v 1.1</div>
+    </div>
+
+    <div class="segmented-control">
+        <button class="seg-btn active" data-tab="settings">Settings</button>
+        <button class="seg-btn" data-tab="history">History</button>
+    </div>
+
+    <div id="view-settings" class="view active">
+        <div class="section">
+            <div class="section-label">Appearance</div>
+            <div class="theme-row">
+                <button class="theme-opt" data-theme="auto">
+                    <span class="t-icon">⚙️</span> Auto
+                </button>
+                <button class="theme-opt" data-theme="light">
+                    <span class="t-icon">☀️</span> Light
+                </button>
+                <button class="theme-opt" data-theme="dark">
+                    <span class="t-icon">🌙</span> Dark
+                </button>
+            </div>
+        </div>
+
+        <div class="section">
+            <div class="section-label">Language</div>
+            <div class="lang-wrap">
+                <select class="lang-select" id="langSelect">
+                    <option value="auto">🌐  Auto-detect</option>
+                    <option value="English">🇬🇧  English</option>
+                    <option value="Portuguese">🇵🇹  Português</option>
+                    <option value="Spanish">🇪🇸  Español</option>
+                    <option value="French">🇫🇷  Français</option>
+                    <option value="German">🇩🇪  Deutsch</option>
+                    <option value="Italian">🇮🇹  Italiano</option>
+                    <option value="Dutch">🇳🇱  Nederlands</option>
+                </select>
+                <span class="lang-chevron">▾</span>
+            </div>
+        </div>
+
+        <div class="pro-wrap">
+            <div class="pro-card">
+                <div class="pro-badge">Pro</div>
+                <div class="pro-title">Nuance Pro</div>
+                <div class="pro-sub">Deeper thinking for curious minds.</div>
+                <ul class="pro-feats">
+                    <li><div class="feat-check">✓</div> Unlimited article analyses</li>
+                    <li><div class="feat-check">✓</div> Deep fact-check mode</li>
+                    <li><div class="feat-check">✓</div> Bias detection score</li>
+                    <li><div class="feat-check">✓</div> Multi-source verification</li>
+                    <li><div class="feat-check">✓</div> Export analysis as PDF</li>
+                </ul>
+                <button class="pro-cta" id="upgradeCta">
+                    <span>Upgrade to Pro</span>
+                    <span class="pro-price">€4.99 / month</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="view-history" class="view">
+        <div id="historyList" style="max-height: 280px; overflow-y: auto;">
+            </div>
+    </div>
+
+    <script src="popup.js"></script>
+</body>
+</html>
