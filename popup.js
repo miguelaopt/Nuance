@@ -1,166 +1,242 @@
-// popup.js
+// popup.js — Nuance v1.4
 
 const SETTINGS_KEY = 'nuanceSettings';
+const HISTORY_KEY  = 'nuanceHistory';
 const defaults = { theme: 'auto', language: 'auto' };
 
-// Inicia o ExtensionPay
 const extpay = ExtPay('nuance-6746');
-let currentUser = null; // Vamos guardar o utilizador aqui
+let currentUser = null;
 
-// Dicionário de Traduções do UI
+// ─── i18n ─────────────────────────────────────────────────────────────────────
 const i18n = {
-    'auto': { appTagline: "Think beyond the headline", appearance: "Appearance", language: "Language", auto: "Auto", light: "Light", dark: "Dark", proSub: "Deeper thinking for curious minds.", btnUpgrade: "Upgrade to Pro", feats: ["Unlimited article analyses", "Deep fact-check mode", "Bias detection score", "Multi-source verification", "Export analysis as PDF"] },
-    'English': { appTagline: "Think beyond the headline", appearance: "Appearance", language: "Language", auto: "Auto", light: "Light", dark: "Dark", proSub: "Deeper thinking for curious minds.", btnUpgrade: "Upgrade to Pro", feats: ["Unlimited article analyses", "Deep fact-check mode", "Bias detection score", "Multi-source verification", "Export analysis as PDF"] },
-    'Portuguese': { appTagline: "Pensa além do título", appearance: "Aparência", language: "Idioma", auto: "Auto", light: "Claro", dark: "Escuro", proSub: "Pensamento profundo para mentes curiosas.", btnUpgrade: "Mudar para Pro", feats: ["Análises de artigos ilimitadas", "Modo deep fact-check", "Pontuação de viés", "Verificação multi-fonte", "Exportar análise em PDF"] },
-    // (Podes manter as outras línguas aqui se quiseres, encurtei para o exemplo focar no Pro)
-    'Spanish': { appTagline: "Piensa más allá del titular", appearance: "Apariencia", language: "Idioma", auto: "Auto", light: "Claro", dark: "Oscuro", proSub: "Pensamiento profundo para mentes curiosas.", btnUpgrade: "Actualizar a Pro", feats: ["Análisis de artículos ilimitados", "Modo de verificación profunda", "Puntuación de sesgo", "Verificación multifuente", "Exportar análisis en PDF"] }
+    'auto':       makeDict("Think beyond the headline",   "Appearance", "Language", "Auto", "Light", "Dark", "Deeper thinking for curious minds.", "Upgrade to Pro", ["Unlimited article analyses","Deep fact-check mode","Bias detection score","Multi-source verification","Social share as image"]),
+    'English':    makeDict("Think beyond the headline",   "Appearance", "Language", "Auto", "Light", "Dark", "Deeper thinking for curious minds.", "Upgrade to Pro", ["Unlimited article analyses","Deep fact-check mode","Bias detection score","Multi-source verification","Social share as image"]),
+    'Portuguese': makeDict("Pensa além do título",        "Aparência",  "Idioma",   "Auto", "Claro","Escuro","Pensamento profundo para mentes curiosas.", "Mudar para Pro", ["Análises ilimitadas","Modo deep fact-check","Pontuação de viés","Verificação multi-fonte","Partilhar como imagem"]),
+    'Spanish':    makeDict("Piensa más allá del titular", "Apariencia", "Idioma",   "Auto", "Claro","Oscuro","Pensamiento profundo para mentes curiosas.", "Actualizar a Pro", ["Análisis ilimitados","Modo verificación profunda","Puntuación de sesgo","Verificación multifuente","Compartir como imagen"]),
+    'French':     makeDict("Pensez au-delà du titre",     "Apparence",  "Langue",   "Auto", "Clair","Sombre","Réflexion approfondie pour esprits curieux.", "Passer à Pro", ["Analyses illimitées","Mode vérification approfondie","Score de biais","Vérification multi-sources","Partager en image"]),
+    'German':     makeDict("Denk über die Schlagzeile hinaus","Erscheinungsbild","Sprache","Auto","Hell","Dunkel","Tiefes Denken für neugierige Köpfe.", "Auf Pro upgraden", ["Unbegrenzte Analysen","Tiefer Faktencheck","Bias-Bewertung","Mehrquellen-Verifikation","Als Bild teilen"]),
+    'Italian':    makeDict("Pensa oltre il titolo",       "Aspetto",    "Lingua",   "Auto", "Chiaro","Scuro","Pensiero profondo per menti curiose.", "Passa a Pro", ["Analisi illimitate","Modalità fact-check","Punteggio bias","Verifica multi-fonte","Condividi come immagine"]),
+    'Dutch':      makeDict("Denk verder dan de kop",      "Weergave",   "Taal",     "Auto", "Licht","Donker","Diep denken voor nieuwsgierige geesten.", "Upgraden naar Pro", ["Onbeperkte analyses","Diepe factcheck","Bias-score","Multi-bron verificatie","Delen als afbeelding"])
 };
 
-// 1. CARREGA O UTILIZADOR DO SERVIDOR PRIMEIRO
-extpay.getUser().then(user => {
-    currentUser = user; // Guarda se pagou e o email
-    
-    // Agora que sabemos quem é, renderizamos a interface
-    chrome.storage.local.get([SETTINGS_KEY], result => {
-        const s = { ...defaults, ...(result[SETTINGS_KEY] || {}) };
-        applyToUI(s);
-    });
-}).catch(err => {
-    // Se não houver net, desenha a interface base
-    chrome.storage.local.get([SETTINGS_KEY], result => {
-        const s = { ...defaults, ...(result[SETTINGS_KEY] || {}) };
-        applyToUI(s);
-    });
-});
+function makeDict(tagline, appearance, language, auto, light, dark, proSub, btnUpgrade, feats) {
+    return { tagline, appearance, language, auto, light, dark, proSub, btnUpgrade, feats };
+}
 
-function applyToUI(settings) {
+// ─── Boot ─────────────────────────────────────────────────────────────────────
+extpay.getUser()
+    .then(user  => { currentUser = user; init(); })
+    .catch(() =>  { currentUser = null;  init(); });
+
+function init() {
+    chrome.storage.local.get([SETTINGS_KEY], result => {
+        const s = { ...defaults, ...(result[SETTINGS_KEY] || {}) };
+        applyTheme(s.theme);
+        applyUI(s);
+    });
+}
+
+// ─── Apply theme to <html> ────────────────────────────────────────────────────
+function applyTheme(themeKey) {
     const htmlEl = document.documentElement;
-    htmlEl.className = ''; 
-    
-    if (settings.theme === 'dark') htmlEl.classList.add('theme-dark');
-    else if (settings.theme === 'light') htmlEl.classList.add('theme-light');
-    else {
-        const isSysDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-        htmlEl.classList.add(isSysDark ? 'theme-dark' : 'theme-light');
-    }
-
-    document.querySelectorAll('.theme-opt').forEach(btn => {
-        btn.classList.toggle('active', btn.dataset.theme === settings.theme);
-    });
-
-    const sel = document.getElementById('langSelect');
-    if (sel) sel.value = settings.language || 'auto';
-
-    // TRADUÇÃO BASE
-    const langKey = settings.language || 'auto';
-    const dict = i18n[langKey] || i18n['English'];
-    
-    document.querySelector('.app-tagline').textContent = dict.appTagline;
-    document.querySelectorAll('.section-label')[0].textContent = dict.appearance;
-    document.querySelectorAll('.section-label')[1].textContent = dict.language;
-    
-    const themeTextElements = document.querySelectorAll('.theme-opt');
-    themeTextElements[0].lastChild.textContent = ' ' + dict.auto;
-    themeTextElements[1].lastChild.textContent = ' ' + dict.light;
-    themeTextElements[2].lastChild.textContent = ' ' + dict.dark;
-    
-    const badge = document.querySelector('.pro-badge');
-    const title = document.querySelector('.pro-title');
-    const sub = document.querySelector('.pro-sub');
-    const feats = document.querySelector('.pro-feats');
-    const cta = document.getElementById('upgradeCta');
-    const priceSpan = cta.querySelector('.pro-price');
-
-    // ─── LÓGICA DE CONTA: FREE vs PRO ───
-    if (currentUser && currentUser.paid) {
-        // ESTADO PRO: O utilizador pagou!
-        badge.textContent = "PRO";
-        badge.style.color = "#4cd97b"; // Fica verde
-        badge.style.background = "rgba(76, 217, 123, 0.13)";
-        badge.style.borderColor = "rgba(76, 217, 123, 0.22)";
-        
-        // Mostra o email. Se não existir, mostra "Pro Member"
-        title.textContent = currentUser.email || "Nuance Pro Member";
-        title.style.fontSize = currentUser.email ? "13px" : "18px"; 
-        title.style.wordBreak = "break-all";
-        
-        sub.textContent = "Unlimited access unlocked. Thank you for supporting Nuance!";
-        feats.style.display = "none"; // Esconde a lista de vendas
-        
-        // Transforma o botão de "Comprar" num botão de "Gerir Conta"
-        cta.querySelector('span:first-child').textContent = "Manage Subscription";
-        if(priceSpan) priceSpan.style.display = "none";
-        cta.style.background = "rgba(255,255,255,0.1)"; // Botão cinzento discreto
+    htmlEl.className = '';
+    if (themeKey === 'dark') {
+        htmlEl.classList.add('theme-dark');
+    } else if (themeKey === 'light') {
+        htmlEl.classList.add('theme-light');
     } else {
-        // ESTADO FREE: O utilizador ainda não pagou
-        badge.textContent = "FREE";
-        title.textContent = "Nuance Pro";
-        title.style.fontSize = "18px";
-        sub.textContent = dict.proSub;
-        feats.style.display = "flex"; // Mostra os motivos para comprar
-        
-        cta.querySelector('span:first-child').textContent = dict.btnUpgrade;
-        if(priceSpan) priceSpan.style.display = "block";
-        cta.style.background = "linear-gradient(90deg, #1560d4, #2b86f5)"; // Botão azul chamativo
-        
-        // Traduz a lista de benefícios
-        const featItems = document.querySelectorAll('.pro-feats li');
-        dict.feats.forEach((featText, index) => {
-            if (featItems[index]) featItems[index].lastChild.nodeValue = " " + featText;
-        });
+        // auto: follow system
+        htmlEl.classList.add(window.matchMedia('(prefers-color-scheme: dark)').matches ? 'theme-dark' : 'theme-light');
     }
 }
 
+// ─── Apply UI state ───────────────────────────────────────────────────────────
+function applyUI(settings) {
+    const langKey = settings.language || 'auto';
+    const dict    = i18n[langKey] || i18n['English'];
+
+    // Text translations
+    document.querySelector('.app-tagline').textContent = dict.tagline;
+
+    const sectionLabels = document.querySelectorAll('.section-label');
+    if (sectionLabels[0]) sectionLabels[0].textContent = dict.appearance;
+    if (sectionLabels[1]) sectionLabels[1].textContent = dict.language;
+
+    // Theme buttons
+    const opts = document.querySelectorAll('.theme-opt');
+    opts.forEach(btn => btn.classList.toggle('active', btn.dataset.theme === settings.theme));
+    if (opts[0]) opts[0].querySelector('span:last-child').textContent = dict.auto;
+    if (opts[1]) opts[1].querySelector('span:last-child').textContent = dict.light;
+    if (opts[2]) opts[2].querySelector('span:last-child').textContent = dict.dark;
+
+    // Language dropdown
+    const sel = document.getElementById('langSelect');
+    if (sel) sel.value = langKey;
+
+    // PRO card: Free vs Pro state
+    renderProCard(dict);
+}
+
+function renderProCard(dict) {
+    const badge    = document.querySelector('.pro-badge');
+    const title    = document.querySelector('.pro-title');
+    const sub      = document.querySelector('.pro-sub');
+    const featsList= document.querySelector('.pro-feats');
+    const cta      = document.getElementById('upgradeCta');
+    if (!cta) return;
+
+    if (currentUser?.paid) {
+        // ── PRO state ──
+        badge.textContent = '✦ PRO';
+        badge.style.cssText += ';color:#4cd97b;background:rgba(76,217,123,.13);border-color:rgba(76,217,123,.25);';
+        title.textContent   = currentUser.email || 'Nuance Pro';
+        title.style.fontSize = currentUser.email ? '13px' : '18px';
+        title.style.wordBreak = 'break-all';
+        sub.textContent   = 'Unlimited access. Thank you for supporting Nuance!';
+        featsList.style.display = 'none';
+        cta.querySelector('span:first-child').textContent = 'Manage Subscription';
+        const priceSpan = cta.querySelector('.pro-price');
+        if (priceSpan) priceSpan.style.display = 'none';
+        cta.style.background = 'rgba(255,255,255,0.08)';
+        cta.style.border = '0.5px solid rgba(255,255,255,0.15)';
+    } else {
+        // ── Free state ──
+        badge.textContent = '✦ FREE';
+        badge.style.cssText = '';
+        title.textContent  = 'Nuance Pro';
+        title.style.fontSize = '18px';
+        title.style.wordBreak = '';
+        sub.textContent   = dict.proSub;
+        featsList.style.display = 'flex';
+        featsList.querySelectorAll('li span').forEach((el, i) => {
+            if (dict.feats[i]) el.textContent = dict.feats[i];
+        });
+        cta.querySelector('span:first-child').textContent = dict.btnUpgrade;
+        const priceSpan = cta.querySelector('.pro-price');
+        if (priceSpan) priceSpan.style.display = '';
+        cta.style.background = 'linear-gradient(90deg,#1560d4,#2b86f5)';
+        cta.style.border = 'none';
+    }
+}
+
+// ─── Save setting ─────────────────────────────────────────────────────────────
 function saveSetting(patch) {
     chrome.storage.local.get([SETTINGS_KEY], result => {
-        const current = { ...defaults, ...(result[SETTINGS_KEY] || {}) };
-        const newSettings = { ...current, ...patch };
-        chrome.storage.local.set({ [SETTINGS_KEY]: newSettings });
-        applyToUI(newSettings); 
+        const current  = { ...defaults, ...(result[SETTINGS_KEY] || {}) };
+        const updated  = { ...current, ...patch };
+        chrome.storage.local.set({ [SETTINGS_KEY]: updated });
+        applyTheme(updated.theme);
+        applyUI(updated);
     });
 }
 
-// ─── Lógica das Tabs (Settings vs History) ───
+// ─── Tab switching ────────────────────────────────────────────────────────────
 document.querySelectorAll('.seg-btn').forEach(btn => {
-    btn.addEventListener('click', (e) => {
+    btn.addEventListener('click', () => {
         document.querySelectorAll('.seg-btn').forEach(b => b.classList.remove('active'));
-        e.target.classList.add('active');
-        document.querySelectorAll('.view').forEach(v => v.style.display = 'none');
-        document.getElementById(`view-${e.target.dataset.tab}`).style.display = 'block';
-        if (e.target.dataset.tab === 'history') loadHistory();
+        btn.classList.add('active');
+        document.querySelectorAll('.view').forEach(v => {
+            v.style.display = 'none';
+            v.classList.remove('active');
+        });
+        const target = document.getElementById(`view-${btn.dataset.tab}`);
+        if (target) { target.style.display = 'block'; target.classList.add('active'); }
+        if (btn.dataset.tab === 'history') loadHistory();
     });
 });
 
+// ─── FEATURE B: History with per-item delete ─────────────────────────────────
 function loadHistory() {
-    chrome.storage.local.get(['nuanceHistory'], (res) => {
-        const history = res.nuanceHistory || [];
-        const list = document.getElementById('historyList');
+    chrome.storage.local.get([HISTORY_KEY], res => {
+        const history = res[HISTORY_KEY] || [];
+        const list    = document.getElementById('historyList');
+
         if (history.length === 0) {
-            list.innerHTML = `<div style="padding: 30px; text-align: center; color: var(--text-3); font-size: 12px;">No articles analyzed yet.</div>`;
+            list.innerHTML = `<div class="history-empty">No articles analyzed yet.<br>Browse a news article to get started.</div>`;
             return;
         }
+
         list.innerHTML = history.map(item => {
-            let color = '#34c759'; if (item.biasScore > 40) color = '#ffcc00'; if (item.biasScore > 75) color = '#ff3b30';
-            return `<a href="${item.url}" target="_blank" class="history-item"><div class="history-meta">${item.date} &nbsp;•&nbsp; Bias: <span style="color: ${color};">${item.biasScore}%</span></div><div class="history-title">${item.title}</div></a>`;
+            let biasColor = '#34c759';
+            if (item.biasScore > 40) biasColor = '#ffcc00';
+            if (item.biasScore > 75) biasColor = '#ff3b30';
+
+            const cbDot = item.clickbait ? `<span class="cb-dot" title="Clickbait detected">⚠️</span>` : '';
+
+            return `
+                <div class="history-item" data-id="${item.id}" data-url="${escapeAttr(item.url)}">
+                    <div class="history-item-info">
+                        <div class="history-meta">
+                            <span>${item.date}</span>
+                            <span style="color:${biasColor}">${item.biasScore}% bias</span>
+                            ${cbDot}
+                        </div>
+                        <div class="history-title">${escapeHTML(item.title)}</div>
+                    </div>
+                    <button class="del-btn" data-id="${item.id}" title="Delete">✕</button>
+                </div>
+            `;
         }).join('');
+
+        // Open URL on row click (but not on delete button)
+        list.querySelectorAll('.history-item').forEach(row => {
+            row.addEventListener('click', e => {
+                if (e.target.closest('.del-btn')) return;
+                const url = row.dataset.url;
+                if (url) chrome.tabs.create({ url });
+            });
+        });
+
+        // Per-item delete (Feature B)
+        list.querySelectorAll('.del-btn').forEach(btn => {
+            btn.addEventListener('click', e => {
+                e.stopPropagation();
+                const id = parseInt(btn.dataset.id, 10);
+                deleteHistoryItem(id);
+            });
+        });
     });
 }
 
-// ─── Event Listeners ───
+function deleteHistoryItem(id) {
+    chrome.storage.local.get([HISTORY_KEY], res => {
+        const updated = (res[HISTORY_KEY] || []).filter(h => h.id !== id);
+        chrome.storage.local.set({ [HISTORY_KEY]: updated }, loadHistory);
+    });
+}
+
+// ─── Event listeners ──────────────────────────────────────────────────────────
 document.querySelectorAll('.theme-opt').forEach(btn => {
     btn.addEventListener('click', () => saveSetting({ theme: btn.dataset.theme }));
 });
 
 document.getElementById('langSelect').addEventListener('change', e => {
-    const newLang = e.target.value;    
-    saveSetting({ language: newLang });
+    const lang = e.target.value;
+    saveSetting({ language: lang });
 
-    chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
-        if (tabs[0]) chrome.tabs.sendMessage(tabs[0].id, { action: "forceReanalyze", language: newLang }).catch(err => {}); 
+    // Tell active tab to re-analyze in new language
+    chrome.tabs.query({ active: true, currentWindow: true }, tabs => {
+        if (tabs[0]?.id) {
+            chrome.tabs.sendMessage(tabs[0].id, { action: "forceReanalyze", language: lang })
+                .catch(() => {}); // Silently ignore if no content script active
+        }
     });
 });
 
-// O Botão agora abre SEMPRE a janela do ExtensionPay (eles gerem o Login e o Pagamento)
 document.getElementById('upgradeCta').addEventListener('click', () => {
     extpay.openPaymentPage();
 });
+
+document.getElementById('clearAllBtn').addEventListener('click', () => {
+    if (confirm('Clear your entire reading history?')) {
+        chrome.storage.local.set({ [HISTORY_KEY]: [] }, loadHistory);
+    }
+});
+
+// ─── Utils ────────────────────────────────────────────────────────────────────
+function escapeHTML(s) {
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+function escapeAttr(s) {
+    return String(s).replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
