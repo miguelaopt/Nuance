@@ -1,11 +1,10 @@
-ja apareceu Seguro convoca Conselho de Estado para 17 de Abril e discursa nos 50 anos da Constituição
+falta bloquear o PDF, bias e os outros pelo plano PRO
+mudar o stripe para conta pessoal, nao csfloat
+adicionar o resto que tinha a desenvolver.
+A) Caçador de "Clickbait" (Aviso Rápido): Quando o utilizador entra numa notícia, antes de carregar o painel grande, a extensão muda o ícone na barra do Chrome ou mostra uma notificação minúscula (ex: "⚠️ Título Enganador") se o título da notícia não corresponder ao conteúdo do texto.
 
+B) Gestor do Cofre (History Management): No nosso Popup, o histórico vai crescendo. Precisamos de adicionar um botão para "Limpar Histórico" ou pequenos botões de lixo ao lado de cada artigo para o utilizador poder gerir a sua privacidade.
 
-https://www.publico.pt/2026/03/25/politica/noticia/seguro-convoca-conselho-estado-17-abril-2169035
+C) Partilha Social (Gerador de PNG): Em vez de exportar um PDF aborrecido, o Nuance gera uma imagem lindíssima (formato Instagram/Twitter) com um fundo gradient, o título da notícia falsa em cima e o Fact-Check da IA em baixo, pronta a ser publicada nas redes.
 
-Apoie o jornalismo do Público. Para ler o artigo completo, junte-se à nossa comunidade de leitores. Saiba mais aqui.
-Se já é assinante do jornal PÚBLICO, saiba que tem direito a oferecer até 6 artigos exclusivos por mês a amigos ou familiares, usando a opção “Oferecer artigo” no topo da página. É tão simples e é outra forma de contribuir para a vida democrática do país.
-Todos os conteúdos do PÚBLICO são protegidos por Direitos de Autor ao abrigo da legislação portuguesa, conforme os Termos e Condições.
- sobre o artigo https://www.publico.pt/2026/03/25/politica/noticia/seguro-convoca-conselho-estado-17-abril-2169035. 
- gora, quero melhorar imenso o UI. quero que consiga clicar na extension, ver detalhes, mudar linguagem, ver settings, 
- fazer upgrade para PRO. tudo com a estética da apple, minimalista, squircle, bonito. 
+D) Indicador de Viés na Barra do Browser (Badge): Fazer com que o ícone do Nuance na barra de ferramentas do Chrome mostre um pequeno número vermelho (ex: 85) logo que abres o site, para saberes instantaneamente que a notícia é muito enviesada, mesmo sem abrires o cartão do Nuance.

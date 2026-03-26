@@ -1,140 +1,164 @@
-// content.js — Nuance v1.1
+// content.js — Nuance v1.3 (UI Refined & PDF Button)
 
 console.log("☯️ Nuance content script active.");
-
 const SETTINGS_KEY = 'nuanceSettings';
+const USAGE_KEY = 'nuanceUsage';
+const FREE_DAILY_LIMIT = 5;
+const extpay = ExtPay('nuance-6746'); // ADICIONA ISTO AQUI
 
-// ─── Theme Resolution ──────────────────────────────────────────────────────────
+// Dicionário para traduzir o Dropdown no próprio site
+const modeI18n = {
+    'auto': { counter: "Counter-Points", fallacy: "Logical Fallacies", factcheck: "Fact-Check" },
+    'English': { counter: "Counter-Points", fallacy: "Logical Fallacies", factcheck: "Fact-Check" },
+    'Portuguese': { counter: "Contra-Argumentos", fallacy: "Falácias Lógicas", factcheck: "Fact-Check" },
+    'Spanish': { counter: "Contraargumentos", fallacy: "Falacias Lógicas", factcheck: "Verificación" },
+    'French': { counter: "Contre-Arguments", fallacy: "Sophismes", factcheck: "Vérification" },
+    'German': { counter: "Gegenargumente", fallacy: "Logische Fehlschlüsse", factcheck: "Faktencheck" },
+    'Italian': { counter: "Controargomenti", fallacy: "Fallacie Logiche", factcheck: "Fact-Check" },
+    'Dutch': { counter: "Tegenargumenten", fallacy: "Logische Drogredenen", factcheck: "Factcheck" }
+};
+
 function resolveTheme(savedTheme) {
     if (savedTheme === 'light') return 'light';
     if (savedTheme === 'dark') return 'dark';
     return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
 }
 
-// ─── Styles ────────────────────────────────────────────────────────────────────
 function buildStyles() {
     return `
         :host { all: initial; }
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
         .card {
-            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif;
             -webkit-font-smoothing: antialiased;
-            width: 320px;
+            width: 360px;
             border-radius: 22px;
             padding: 0;
             overflow: hidden;
             animation: slideUp 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+            transition: height 0.3s ease;
         }
-
+        
+        /* Variáveis de Tema Mágico */
         .card.light {
-            background: rgba(255, 255, 255, 0.9);
-            backdrop-filter: blur(28px) saturate(200%);
-            -webkit-backdrop-filter: blur(28px) saturate(200%);
-            border: 0.5px solid rgba(0, 0, 0, 0.1);
-            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.13), 0 2px 8px rgba(0, 0, 0, 0.06);
-            color: #1d1d1f;
+            --bg-pill: rgba(0,0,0,0.06); --bg-pill-hover: rgba(0,0,0,0.1);
+            --border: rgba(0, 0, 0, 0.1); --text-main: #1d1d1f; --text-sub: rgba(0,0,0,0.6);
+            background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(28px) saturate(200%);
+            border: 0.5px solid var(--border); box-shadow: 0 12px 40px rgba(0, 0, 0, 0.13);
+            color: var(--text-main);
         }
-
         .card.dark {
-            background: rgba(28, 28, 30, 0.94);
-            backdrop-filter: blur(28px) saturate(180%);
-            -webkit-backdrop-filter: blur(28px) saturate(180%);
-            border: 0.5px solid rgba(255, 255, 255, 0.1);
-            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.55), 0 2px 8px rgba(0, 0, 0, 0.3);
-            color: #f5f5f7;
+            --bg-pill: rgba(255,255,255,0.12); --bg-pill-hover: rgba(255,255,255,0.2);
+            --border: rgba(255, 255, 255, 0.1); --text-main: #f5f5f7; --text-sub: rgba(255,255,255,0.7);
+            background: rgba(28, 28, 30, 0.94); backdrop-filter: blur(28px) saturate(180%);
+            border: 0.5px solid var(--border); box-shadow: 0 12px 40px rgba(0, 0, 0, 0.55);
+            color: var(--text-main);
         }
 
-        @keyframes slideUp {
-            from { opacity: 0; transform: translateY(18px) scale(0.94); }
-            to   { opacity: 1; transform: translateY(0)     scale(1);    }
-        }
+        .card.minimized .body, .card.minimized .divider, .card.minimized .sources-wrap { display: none !important; }
+        .card.minimized { width: 140px; }
 
-        /* ── Header ── */
-        .header { display: flex; align-items: center; justify-content: space-between; padding: 14px 16px 13px; }
-        .wordmark { display: flex; align-items: center; gap: 6px; }
-        .wordmark-dot { width: 8px; height: 8px; border-radius: 50%; background: #0071e3; flex-shrink: 0; }
-        .card.dark .wordmark-dot { background: #2997ff; }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(18px) scale(0.94); } to { opacity: 1; transform: translateY(0) scale(1); } }
+
+        /* ── Header & Controles ── */
+        .header { display: flex; align-items: center; justify-content: space-between; padding: 12px 20px; cursor: grab; }
+        .header:active { cursor: grabbing; }
+        
+        .mac-controls { display: flex; gap: 6px; align-items: center; }
+        .mac-btn { width: 12px; height: 12px; border-radius: 50%; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; opacity: 0.9; }
+        .mac-btn:hover { opacity: 1; }
+        .mac-close { background: #ff5f56; border: 0.5px solid #e0443e; }
+        .mac-min { background: #ffbd2e; border: 0.5px solid #dea123; }
+
+        .wordmark { display: flex; align-items: center; gap: 6px; pointer-events: none; }
         .wordmark-text { font-size: 13px; font-weight: 700; letter-spacing: -0.2px; }
-        .card.light .wordmark-text { color: #1d1d1f; }
-        .card.dark  .wordmark-text { color: #f5f5f7; }
-        .controls { display: flex; gap: 2px; align-items: center; }
-        .ctrl-btn { background: none; border: none; cursor: pointer; width: 26px; height: 26px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; line-height: 1; transition: background 0.15s ease; color: inherit; }
-        .card.light .ctrl-btn { color: rgba(0,0,0,0.35); }
-        .card.dark  .ctrl-btn { color: rgba(255,255,255,0.35); }
-        .card.light .ctrl-btn:hover { background: rgba(0,0,0,0.06); color: rgba(0,0,0,0.6); }
-        .card.dark  .ctrl-btn:hover { background: rgba(255,255,255,0.1); color: rgba(255,255,255,0.6); }
 
-        /* ── Divider ── */
-        .divider { height: 0.5px; margin: 0 16px; }
-        .card.light .divider { background: rgba(0,0,0,0.07); }
-        .card.dark  .divider { background: rgba(255,255,255,0.08); }
+        /* NOVO: Dropdown e PDF */
+        .mode-select {
+            appearance: none;
+            background: var(--bg-pill);
+            border: 0.5px solid transparent;
+            border-radius: 12px;
+            padding: 4px 22px 4px 10px;
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--text-main);
+            cursor: pointer;
+            outline: none;
+            margin-left: 8px;
+            margin-right: 16px;
+            transition: all 0.2s;
+            pointer-events: auto;
+            /* Ícone de seta desenhado via CSS */
+            background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2224%22%20height%3D%2224%22%20viewBox%3D%220%200%2024%2024%20%22%20fill%3D%22none%22%20stroke%3D%22%23888%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpolyline%20points%3D%226%209%2012%2015%2018%209%22%3E%3C%2Fpolyline%3E%3C%2Fsvg%3E");
+            background-repeat: no-repeat;
+            background-position: right 6px top 50%;
+            background-size: 12px auto;
+        }
+        .mode-select:hover { background: var(--bg-pill-hover); border-color: var(--border); }
 
-        /* ── Body ── */
+        .pdf-btn {
+            background: var(--bg-pill);
+            border: 0.5px solid transparent;
+            color: var(--text-main);
+            font-size: 11px;
+            font-weight: 600;
+            border-radius: 12px;
+            padding: 4px 10px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            transition: all 0.2s;
+            pointer-events: auto;
+        }
+        .pdf-btn:hover { background: var(--bg-pill-hover); border-color: var(--border); }
+
+        .divider { height: 0.5px; margin: 0 16px; background: var(--border); }
+
+        /* ── Resto do UI ── */
         .body { padding: 12px 16px 14px; }
-
-        /* ── Loading ── */
         .loading { display: flex; align-items: center; gap: 10px; padding: 2px 0; }
-        .pulse-dot { width: 7px; height: 7px; border-radius: 50%; background: #0071e3; flex-shrink: 0; animation: pulse 1.3s ease-in-out infinite; }
+        .pulse-dot { width: 7px; height: 7px; border-radius: 50%; background: #0071e3; animation: pulse 1.3s ease-in-out infinite; }
         .card.dark .pulse-dot { background: #2997ff; }
         @keyframes pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.3; transform: scale(0.6); } }
-        .loading-text { font-size: 13px; font-style: italic; }
-        .card.light .loading-text { color: rgba(0,0,0,0.38); }
-        .card.dark  .loading-text { color: rgba(255,255,255,0.3); }
+        .loading-text { font-size: 13px; font-style: italic; opacity: 0.6; }
 
-        /* ── Arguments ── */
         .arg-item { display: flex; gap: 10px; padding: 8px 0; animation: fadeRise 0.4s ease both; }
-        .arg-item + .arg-item { border-top: 0.5px solid transparent; }
-        .card.light .arg-item + .arg-item { border-top-color: rgba(0,0,0,0.055); }
-        .card.dark  .arg-item + .arg-item { border-top-color: rgba(255,255,255,0.06); }
-        .arg-item:nth-child(1) { animation-delay: 0.04s; }
-        .arg-item:nth-child(2) { animation-delay: 0.12s; }
-        .arg-item:nth-child(3) { animation-delay: 0.20s; }
-        @keyframes fadeRise { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
         .arg-num { width: 18px; height: 18px; border-radius: 50%; background: #0071e3; color: #fff; font-size: 9.5px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 1px; }
         .card.dark .arg-num { background: #2997ff; }
         .arg-text { font-size: 13.5px; line-height: 1.45; flex: 1; }
-        .card.light .arg-text { color: #1d1d1f; }
-        .card.dark  .arg-text { color: #e0e0e6; }
+        @keyframes fadeRise { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
 
-        /* ── Sources ── */
         .sources-wrap { margin-top: 0; }
-        .sources-label { font-size: 10.5px; font-weight: 600; letter-spacing: 0.5px; text-transform: uppercase; padding: 10px 16px 6px; }
-        .card.light .sources-label { color: rgba(0,0,0,0.3); }
-        .card.dark  .sources-label { color: rgba(255,255,255,0.28); }
+        .sources-label { font-size: 10.5px; font-weight: 600; text-transform: uppercase; padding: 10px 16px 6px; opacity: 0.4; }
         .sources-list { padding: 0 10px 12px; display: flex; flex-direction: column; gap: 2px; }
-        .source-link { display: flex; align-items: center; gap: 8px; padding: 7px 8px; border-radius: 10px; text-decoration: none; font-size: 12.5px; font-weight: 500; letter-spacing: -0.1px; transition: background 0.13s ease; animation: fadeRise 0.4s ease both; }
-        .source-link:nth-child(1) { animation-delay: 0.3s; }
-        .source-link:nth-child(2) { animation-delay: 0.38s; }
-        .source-link:nth-child(3) { animation-delay: 0.46s; }
-        .card.light .source-link { color: #0071e3; }
-        .card.dark  .source-link { color: #2997ff; }
-        .card.light .source-link:hover { background: rgba(0,113,227,0.07); }
-        .card.dark  .source-link:hover { background: rgba(41,151,255,0.12); }
-        .source-favicon { width: 14px; height: 14px; border-radius: 4px; flex-shrink: 0; object-fit: cover; background: rgba(0,113,227,0.12); }
-        .source-arrow { margin-left: auto; font-size: 10px; opacity: 0.4; }
-
-        /* ── Error ── */
-        .error-text { font-size: 13px; padding: 2px 0; }
-        .card.light .error-text { color: #ff3b30; }
-        .card.dark  .error-text { color: #ff453a; }
+        .source-link { display: flex; align-items: center; gap: 8px; padding: 7px 8px; border-radius: 10px; text-decoration: none; font-size: 12.5px; font-weight: 500; color: #0071e3; transition: background 0.13s ease; }
+        .card.dark .source-link { color: #2997ff; }
+        .source-link:hover { background: var(--bg-pill-hover); }
+        .source-favicon { width: 14px; height: 14px; border-radius: 4px; }
+        
+        .paywall-box { text-align: center; padding: 10px 0; }
+        .paywall-title { font-size: 15px; font-weight: 700; margin-bottom: 6px; color: #ff3b30; }
+        .paywall-desc { font-size: 12px; opacity: 0.8; margin-bottom: 14px; line-height: 1.4; }
+        .paywall-btn { background: #0071e3; color: white; border: none; border-radius: 12px; padding: 10px 20px; font-weight: 600; cursor: pointer; width: 100%; font-size: 13px; }
     `;
 }
 
-// ─── Panel Injection ───────────────────────────────────────────────────────────
+// ─── Panel Injection & Drag Logic ──────────────────────────────────────────────
 let shadowRoot = null;
-let currentTheme = 'light';
+let hostElement = null;
 
-function injectPanel(theme) {
+function injectPanel(theme, language) {
     if (document.getElementById('nuance-root')) return;
 
-    currentTheme = theme;
-    const host = document.createElement('div');
-    host.id = 'nuance-root';
-    host.style.cssText = `position: fixed; top: 24px; right: 24px; z-index: 2147483647;`;
-    document.body.appendChild(host);
+    hostElement = document.createElement('div');
+    hostElement.id = 'nuance-root';
+    hostElement.style.cssText = `position: fixed; top: 24px; right: 24px; z-index: 2147483647;`;
+    document.body.appendChild(hostElement);
 
-    const shadow = host.attachShadow({ mode: 'open' });
+    const shadow = hostElement.attachShadow({ mode: 'open' });
     shadowRoot = shadow;
 
     const styleEl = document.createElement('style');
@@ -143,60 +167,185 @@ function injectPanel(theme) {
 
     const card = document.createElement('div');
     card.className = `card ${theme}`;
-    card.innerHTML = buildCardHTML(theme);
+    card.innerHTML = buildCardHTML(language || 'auto');
     shadow.appendChild(card);
 
-    shadow.querySelector('.close-btn').addEventListener('click', () => {
-        host.remove();
-        shadowRoot = null;
+    // Botões Mac (Vermelho = Fechar, Amarelo = Minimizar)
+    shadow.querySelector('.mac-close').addEventListener('click', () => { hostElement.remove(); shadowRoot = null; });
+    shadow.querySelector('.mac-min').addEventListener('click', () => { card.classList.toggle('minimized'); });
+
+    // PDF Generator
+    shadow.querySelector('.pdf-btn').addEventListener('click', () => {
+        if (!window.lastNuanceResponse) return alert("Please wait for the analysis to finish.");
+        const { arguments: args, sources, biasScore, biasReason } = window.lastNuanceResponse;
+        
+        let html = `
+            <html><head><meta charset="UTF-8"><title>Nuance Report</title>
+            <style>
+                body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; padding: 40px; color: #1d1d1f; max-width: 800px; margin: 0 auto; line-height: 1.6; }
+                h1 { font-size: 26px; margin-bottom: 5px; color: #000; }
+                .url { color: #86868b; font-size: 13px; margin-bottom: 30px; word-break: break-all; }
+                .bias { padding: 18px; background: #f5f5f7; border-radius: 12px; margin-bottom: 30px; border-left: 4px solid ${biasScore > 75 ? '#ff3b30' : biasScore > 40 ? '#ffcc00' : '#34c759'}; }
+                .arg { margin-bottom: 15px; }
+                .sources { margin-top: 40px; border-top: 1px solid #d2d2d7; padding-top: 20px; font-size: 14px; }
+                ul { padding-left: 20px; }
+            </style>
+            </head><body>
+            <h1>Nuance Analysis Report</h1>
+            <div class="url">Source: <a href="${window.location.href}">${window.location.href}</a></div>
+            <div class="bias"><strong>Bias Score: ${biasScore}%</strong><br><i>${biasReason}</i></div>
+            <h2>Key Insights</h2>
+            ${args.map((a, i) => `<div class="arg"><b>${i+1}.</b> ${a}</div>`).join('')}
+            <div class="sources"><h3>Verified Sources</h3>
+            <ul>${sources.map(s => `<li><a href="${s.url}">${s.name}</a></li>`).join('')}</ul>
+            </div><script>window.print();</script></body></html>
+        `;
+        const blob = new Blob([html], {type: 'text/html'});
+        window.open(URL.createObjectURL(blob), '_blank');
     });
 
-    shadow.querySelector('.theme-btn').addEventListener('click', () => {
-        const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-        currentTheme = newTheme;
-        card.className = `card ${newTheme}`;
-        shadow.querySelector('.theme-btn').textContent = newTheme === 'dark' ? '☀️' : '🌙';
+    // Lógica do Menu Dropdown
+    shadow.querySelector('#lensMode').addEventListener('change', (e) => {
+        const selectedMode = e.target.value;
+        const body = shadow.querySelector('.body');
+        const sourcesWrap = shadow.querySelector('.sources-wrap');
+        
+        body.innerHTML = `<div class="loading"><div class="pulse-dot"></div><span class="loading-text">Changing lens...</span></div>`;
+        sourcesWrap.style.display = 'none';
 
-        chrome.storage.local.get([SETTINGS_KEY], result => {
-            const s = result[SETTINGS_KEY] || {};
-            chrome.storage.local.set({ [SETTINGS_KEY]: { ...s, theme: newTheme } });
+        chrome.storage.local.get([SETTINGS_KEY], (result) => {
+            const settings = result[SETTINGS_KEY] || {};
+            chrome.runtime.sendMessage(
+                { action: "analyzeText", text: extractCleanText(), language: settings.language || 'auto', mode: selectedMode },
+                (response) => renderResults(response)
+            );
         });
     });
+
+    // DRAG AND DROP
+    const header = shadow.querySelector('.header');
+    let isDragging = false, startX, startY, initialX, initialY;
+
+    header.addEventListener('mousedown', e => {
+        // Ignorar se clicou nos botões ou no dropdown
+        if(e.target.closest('.mac-controls') || e.target.closest('.mode-select') || e.target.closest('.pdf-btn')) return; 
+        
+        isDragging = true;
+        startX = e.clientX; startY = e.clientY;
+        const rect = hostElement.getBoundingClientRect();
+        initialX = rect.left; initialY = rect.top;
+        hostElement.style.right = 'auto'; 
+        hostElement.style.left = initialX + 'px';
+        hostElement.style.top = initialY + 'px';
+    });
+
+    window.addEventListener('mousemove', e => {
+        if(!isDragging) return;
+        hostElement.style.left = (initialX + (e.clientX - startX)) + 'px';
+        hostElement.style.top = (initialY + (e.clientY - startY)) + 'px';
+    });
+
+    window.addEventListener('mouseup', () => isDragging = false);
 }
 
-function buildCardHTML(theme) {
-    const themeIcon = theme === 'dark' ? '☀️' : '🌙';
+function buildCardHTML(langKey) {
+    const t = modeI18n[langKey] || modeI18n['English'];
     return `
         <div class="header">
-            <div class="wordmark">
-                <div class="wordmark-dot"></div>
-                <span class="wordmark-text">Nuance</span>
+            <div class="mac-controls" style="flex: 1; display: flex; justify-content: flex-start;">
+                <button class="mac-btn mac-close" title="Close"></button>
+                <button class="mac-btn mac-min" title="Minimize"></button>
             </div>
-            <div class="controls">
-                <button class="ctrl-btn theme-btn" title="Toggle theme">${themeIcon}</button>
-                <button class="ctrl-btn close-btn" title="Close">✕</button>
+            
+            <div class="wordmark" style="flex: 2; display: flex; justify-content: center;">
+                <span class="wordmark-text">Nuance</span>
+                <select class="mode-select" id="lensMode" title="Focus Mode">
+                    <option value="counter">${t.counter}</option>
+                    <option value="fallacy">${t.fallacy}</option>
+                    <option value="factcheck">${t.factcheck}</option>
+                </select>
+            </div>
+            
+            <div style="flex: 1; display: flex; justify-content: flex-end;">
+                <button class="pdf-btn" title="Export as PDF">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                    PDF
+                </button>
             </div>
         </div>
         <div class="divider"></div>
         <div class="body">
-            <div class="loading">
-                <div class="pulse-dot"></div>
-                <span class="loading-text">Analyzing article…</span>
-            </div>
+            <div class="loading"><div class="pulse-dot"></div><span class="loading-text">Analyzing article…</span></div>
         </div>
         <div class="sources-wrap" style="display:none"></div>
     `;
 }
 
-// ─── Render Results ────────────────────────────────────────────────────────────
-function renderResults(response) {
+// ─── Render Results & Paywall ────────────────────────────────────────────────
+function renderPaywall() {
     if (!shadowRoot) return;
+    const body = shadowRoot.querySelector('.body');
+    const sourcesWrap = shadowRoot.querySelector('.sources-wrap');
+    sourcesWrap.style.display = 'none';
+    body.innerHTML = `
+        <div class="paywall-box">
+            <div class="paywall-title">Daily Limit Reached</div>
+            <div class="paywall-desc">You've used your 5 free analyses for today. Upgrade to Nuance Pro for unlimited fact-checking.</div>
+            <button class="paywall-btn" id="pay-btn">Upgrade to Pro</button>
+        </div>
+    `;
+    
+    // Liga o botão à janela de pagamento
+    shadowRoot.querySelector('#pay-btn').addEventListener('click', () => {
+        extpay.openPaymentPage();
+    });
+}
 
+function checkLimitsAndAnalyze(text, language) {
+    // 1. Vai ao servidor verificar se é utilizador PRO
+    extpay.getUser().then(user => {
+        if (user.paid) {
+            console.log("💎 Nuance PRO ativo! Acesso ilimitado.");
+            // Utilizador Pro: Não há contagem, manda logo analisar
+            chrome.runtime.sendMessage(
+                { action: "analyzeText", text, language }, 
+                (response) => renderResults(response)
+            );
+        } else {
+            console.log("🆓 Nuance Grátis: A verificar limites...");
+            // Utilizador Grátis: Verifica a contagem diária (o que já fazias)
+            chrome.storage.local.get([USAGE_KEY], (res) => {
+                const today = new Date().toDateString();
+                let usage = res[USAGE_KEY] || { date: today, count: 0 };
+                if (usage.date !== today) usage = { date: today, count: 0 };
+
+                if (usage.count >= FREE_DAILY_LIMIT) {
+                    renderPaywall();
+                } else {
+                    usage.count++; 
+                    chrome.storage.local.set({ [USAGE_KEY]: usage });
+                    chrome.runtime.sendMessage(
+                        { action: "analyzeText", text, language }, 
+                        (response) => renderResults(response)
+                    );
+                }
+            });
+        }
+    }).catch(err => {
+        console.error("Erro a contactar o ExtensionPay:", err);
+        // Se a internet falhar ou algo der errado, assumimos como grátis por segurança
+        renderPaywall(); 
+    });
+}
+
+function renderResults(response) {
+    window.lastNuanceResponse = response;
+    if (!shadowRoot) return;
     const body = shadowRoot.querySelector('.body');
     const sourcesWrap = shadowRoot.querySelector('.sources-wrap');
 
     if (!response || !response.success) {
-        body.innerHTML = `<span class="error-text">Error: ${response?.error || 'No response received.'}</span>`;
+        body.innerHTML = `<span style="color:#ff3b30; font-size:13px;">Error: ${response?.error || 'Analysis failed.'}</span>`;
         return;
     }
 
@@ -204,39 +353,27 @@ function renderResults(response) {
     let html = '';
 
     if (biasScore !== undefined) {
-        let color = '#34c759'; 
-        let biasLevel = 'Low';
+        let color = '#34c759'; let biasLevel = 'Low';
         if (biasScore > 40) { color = '#ffcc00'; biasLevel = 'Moderate'; } 
         if (biasScore > 75) { color = '#ff3b30'; biasLevel = 'High'; }     
 
         html += `
-            <div style="margin-bottom: 14px; animation: fadeRise 0.4s ease both;">
+            <div style="margin-bottom: 14px;">
                 <div style="font-size: 10px; font-weight: 700; text-transform: uppercase; margin-bottom: 6px; display: flex; justify-content: space-between; opacity: 0.6;">
                     <span>Bias Score: ${biasLevel}</span>
-                    <span style="color: ${color}; opacity: 1; font-size: 11px;">${biasScore}%</span>
+                    <span style="color: ${color}; opacity: 1;">${biasScore}%</span>
                 </div>
                 <div style="width: 100%; height: 6px; background: rgba(128,128,128,0.2); border-radius: 4px; overflow: hidden;">
-                    <div style="height: 100%; border-radius: 4px; transition: width 1s cubic-bezier(0.22, 1, 0.36, 1); width: ${biasScore}%; background: ${color};"></div>
-                </div>
-                <div style="font-size: 11px; margin-top: 6px; font-style: italic; opacity: 0.7; line-height: 1.3;">
-                    "${escapeHTML(biasReason)}"
+                    <div style="height: 100%; width: ${biasScore}%; background: ${color}; transition: width 1s;"></div>
                 </div>
             </div>
             <div class="divider" style="margin-bottom: 12px; margin-left: -16px; margin-right: -16px;"></div>
         `;
     }
 
-    if (Array.isArray(args) && args.length > 0) {
-        html += args.map((arg, i) => `
-            <div class="arg-item">
-                <div class="arg-num">${i + 1}</div>
-                <div class="arg-text">${escapeHTML(arg)}</div>
-            </div>
-        `).join('');
-    } else if (typeof args === 'string') {
-        html += `<div class="arg-text">${args.replace(/\n/g, '<br>')}</div>`;
+    if (Array.isArray(args)) {
+        html += args.map((arg, i) => `<div class="arg-item"><div class="arg-num">${i + 1}</div><div class="arg-text">${escapeHTML(arg)}</div></div>`).join('');
     }
-
     body.innerHTML = html;
 
     if (sources && sources.length > 0) {
@@ -246,139 +383,68 @@ function renderResults(response) {
             <div class="sources-label">Sources</div>
             <div class="sources-list">
                 ${sources.map(s => `
-                    <a class="source-link" href="${escapeHTML(s.url)}" target="_blank" rel="noopener noreferrer">
-                        <img class="source-favicon" src="https://www.google.com/s2/favicons?domain=${encodeURIComponent(s.url)}&sz=32" alt="" onerror="this.style.display='none'">
+                    <a class="source-link" href="${escapeHTML(s.url)}" target="_blank">
+                        <img class="source-favicon" src="https://www.google.com/s2/favicons?domain=${encodeURIComponent(s.url)}&sz=32">
                         ${escapeHTML(s.name)}
-                        <span class="source-arrow">↗</span>
                     </a>
                 `).join('')}
             </div>
         `;
     }
-
-    // GUARDA NO HISTÓRICO
-    if (response && response.success && response.biasScore !== undefined) {
-        chrome.storage.local.get(['nuanceHistory'], (res) => {
-            let history = res.nuanceHistory || [];
-            const newItem = {
-                url: window.location.href,
-                title: document.title.split('-')[0].split('|')[0].trim(), 
-                biasScore: response.biasScore,
-                date: new Date().toLocaleDateString()
-            };
-            history = history.filter(item => item.url !== newItem.url);
-            history.unshift(newItem);
-            if (history.length > 10) history.pop(); 
-            chrome.storage.local.set({ nuanceHistory: history });
-        });
-    }
 }
 
-function escapeHTML(str) {
-    return String(str)
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;');
-}
+function escapeHTML(str) { return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
 
-// ─── Text Extraction & Detection ───────────────────────────────────────────────
+// ─── Text Extraction & Limits Logic ─────────────────────────────────────────────
 function isArticlePage() {
     if (window.location.pathname.length < 15) return false;
-    if (document.querySelector('article, [itemtype*="NewsArticle"], .article-body, .texto_noticia, .post-content')) {
-        return true;
-    }
-    return false;
+    return !!document.querySelector('article, [itemtype*="NewsArticle"], .article-body, .texto_noticia, .post-content');
 }
 
 function extractCleanText() {
     let articleText = "";
     const container = document.querySelector('article, .texto_noticia, .article-body, .post-content, main') || document.body;
     container.querySelectorAll('h1, h2, p').forEach(el => {
-        if (el.innerText.trim().length > 60) {
-            articleText += el.innerText.trim() + "\n\n";
-        }
+        if (el.innerText.trim().length > 60) articleText += el.innerText.trim() + "\n\n";
     });
     return articleText;
 }
 
-// ─── Listeners (Live Translation & Context Menu) ───────────────────────────────
-chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-    if (request.action === "forceReanalyze" && shadowRoot) {
-        console.log(`🔄 Nuance: A forçar tradução para ${request.language}...`);
+
+
+// ─── Listeners ───────────────────────────────────────────────────────────────
+chrome.runtime.onMessage.addListener((request) => {
+    if ((request.action === "forceReanalyze" || request.action === "analyzeSelection") && shadowRoot) {
+        const text = request.action === "forceReanalyze" ? extractCleanText() : request.text;
         
-        const text = extractCleanText();
+        // Traduz as opções do dropdown na hora
+        const t = modeI18n[request.language] || modeI18n['English'];
+        shadowRoot.querySelector('#lensMode option[value="counter"]').textContent = t.counter;
+        shadowRoot.querySelector('#lensMode option[value="fallacy"]').textContent = t.fallacy;
+        shadowRoot.querySelector('#lensMode option[value="factcheck"]').textContent = t.factcheck;
+
         const body = shadowRoot.querySelector('.body');
         const sourcesWrap = shadowRoot.querySelector('.sources-wrap');
-        
-        body.innerHTML = `
-            <div class="loading">
-                <div class="pulse-dot"></div>
-                <span class="loading-text">Translating to ${request.language}...</span>
-            </div>
-        `;
+        body.innerHTML = `<div class="loading"><div class="pulse-dot"></div><span class="loading-text">Processing...</span></div>`;
         sourcesWrap.style.display = 'none';
 
+        const currentMode = shadowRoot.querySelector('#lensMode').value;
+
         chrome.runtime.sendMessage(
-            { action: "analyzeText", text: text, language: request.language },
+            { action: "analyzeText", text: text, language: request.language || 'auto', mode: currentMode },
             (response) => renderResults(response)
         );
     }
-
-    if (request.action === "analyzeSelection") {
-        console.log("🎯 Nuance: Seleção cirúrgica ativada!");
-        
-        chrome.storage.local.get([SETTINGS_KEY], (result) => {
-            const settings = result[SETTINGS_KEY] || {};
-            const theme = resolveTheme(settings.theme);
-            const language = settings.language || 'auto';
-
-            injectPanel(theme);
-
-            const body = shadowRoot.querySelector('.body');
-            const sourcesWrap = shadowRoot.querySelector('.sources-wrap');
-            body.innerHTML = `
-                <div class="loading">
-                    <div class="pulse-dot"></div>
-                    <span class="loading-text">Analyzing selection...</span>
-                </div>
-            `;
-            if (sourcesWrap) sourcesWrap.style.display = 'none';
-
-            chrome.runtime.sendMessage(
-                { action: "analyzeText", text: request.text, language: language },
-                (response) => renderResults(response)
-            );
-        });
-    }
 });
 
-// ─── Boot ──────────────────────────────────────────────────────────────────────
 window.addEventListener('load', () => {
-    if (!isArticlePage()) {
-        console.log("📄 Nuance: Não é um artigo. A dormir.");
-        return;
-    }
-
+    if (!isArticlePage()) return;
     const text = extractCleanText();
     if (text.length <= 500) return;
 
-    console.log("📰 Nuance: article detected. Loading settings…");
-
     chrome.storage.local.get([SETTINGS_KEY], (result) => {
         const settings = result[SETTINGS_KEY] || {};
-        const theme = resolveTheme(settings.theme);
-        const language = settings.language || 'auto';
-
-        console.log(`⚙️ Nuance: theme=${theme}, language=${language}`);
-        injectPanel(theme);
-
-        chrome.runtime.sendMessage(
-            { action: "analyzeText", text, language },
-            (response) => {
-                console.log("📥 Nuance: analysis received.", response);
-                renderResults(response);
-            }
-        );
+        injectPanel(resolveTheme(settings.theme), settings.language);
+        checkLimitsAndAnalyze(text, settings.language || 'auto');
     });
 });
