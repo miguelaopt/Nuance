@@ -1,46 +1,67 @@
-// background.js - O Cérebro do Nuance
+// background.js — Nuance Service Worker
 
-console.log("🧠 Background Service Worker a iniciar...");
+console.log("🧠 Nuance Service Worker initializing…");
 
-// Tenta carregar as chaves do cofre
 try {
     importScripts('env.js');
-    console.log("🔐 Coordenadas do cofre (env.js) carregadas.");
+    console.log("🔐 env.js loaded successfully.");
 } catch (e) {
-    console.error("❌ ERRO CRÍTICO: Não consegui encontrar o ficheiro env.js!", e);
+    console.error("❌ CRITICAL: Could not load env.js!", e);
 }
 
-// Ouvir mensagens vindas do content.js
-// background.js
-
-// Ouve a mensagem e decide o que fazer
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-    console.log("📩 Mensagem recebida:", request.action);
-
     if (request.action === "analyzeText") {
-        // Executamos a função mas retornamos TRUE imediatamente para manter o canal
-        handleAsyncRequest(request.text, sendResponse);
-        return true; 
+        handleAnalysis(request.text, request.language || 'auto', sendResponse);
+        return true; // Keep message channel open for async response
     }
 });
 
-async function handleAsyncRequest(text, sendResponse) {
+async function handleAnalysis(text, language, sendResponse) {
     try {
-        console.log("🤖 A pedir argumentos ao Groq...");
-        const result = await askGroq(text);
-        console.log("✅ Sucesso!");
-        sendResponse({ success: true, arguments: result });
+        console.log(`🤖 Requesting analysis from Groq (language: ${language})…`);
+        const result = await askGroq(text, language);
+        console.log("✅ Analysis complete.");
+        sendResponse({ success: true, ...result });
     } catch (error) {
-        console.error("❌ Erro:", error.message);
+        console.error("❌ Analysis error:", error.message);
         sendResponse({ success: false, error: error.message });
     }
 }
 
-// A função askGroq mantém-se como estava (aquela que cortámos o texto para 3000 chars)
-async function askGroq(articleText) {
+async function askGroq(articleText, language = 'auto') {
     const url = "https://api.groq.com/openai/v1/chat/completions";
+
+    if (typeof ENV === 'undefined' || !ENV.GROQ_API_KEY) {
+        throw new Error("API Key not found. Please check your env.js file.");
+    }
+
     const cleanedText = articleText.substring(0, 3000);
-    const systemPrompt = "Provide 3 short, diverse counter-arguments. Use bullet points. Same language as the article.";
+
+    const langInstruction = language === 'auto'
+        ? 'Respond in the same language as the article.'
+        : `Respond in ${language}.`;
+
+    const systemPrompt = `You are 'Nuance', a critical thinking assistant that helps readers escape information bubbles.
+
+Analyze the article and return ONLY a valid JSON object (no markdown, no backticks, no preamble) with this exact structure:
+{
+  "arguments": [
+    "First counter-argument as a complete sentence.",
+    "Second counter-argument as a complete sentence.",
+    "Third counter-argument as a complete sentence."
+  ],
+  "sources": [
+    { "name": "Publication Name", "url": "https://homepage-url.com" },
+    { "name": "Publication Name 2", "url": "https://homepage-url2.com" }
+  ]
+}
+
+Rules:
+- Arguments must be short (1-2 sentences), logical, factual counter-points to the article's main thesis.
+- Sources must be 2-3 credible, well-known publications highly relevant to the article's topic.
+- Use only real publication homepages (Reuters, BBC, AP News, The Guardian, Le Monde, Público, El País, Der Spiegel, etc.).
+- Do NOT invent URLs. Only use homepage URLs you are certain of.
+- ${langInstruction}`;
 
     const response = await fetch(url, {
         method: "POST",
@@ -52,70 +73,27 @@ async function askGroq(articleText) {
             model: "llama-3.3-70b-versatile",
             messages: [
                 { role: "system", content: systemPrompt },
-                { role: "user", content: `Analyze:\n\n${cleanedText}` }
+                { role: "user", content: `Article:\n\n${cleanedText}` }
             ],
-            temperature: 0.2
+            temperature: 0.2,
+            max_tokens: 700
         })
     });
 
     if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error ? errorData.error.message : "Groq Error");
-    }
-
-    const data = await response.json();
-    return data.choices[0].message.content;
-}
-
-async function handleAnalysis(text, sendResponse) {
-    try {
-        console.log("🤖 A chamar a API do Groq...");
-        const result = await askGroq(text);
-        console.log("✅ Resposta da IA recebida com sucesso.");
-        sendResponse({ success: true, arguments: result });
-    } catch (error) {
-        console.error("❌ Erro na análise:", error.message);
-        sendResponse({ success: false, error: error.message });
-    }
-}
-
-async function askGroq(articleText) {
-    const url = "https://api.groq.com/openai/v1/chat/completions";
-    
-    if (typeof ENV === 'undefined' || !ENV.GROQ_API_KEY) {
-        throw new Error("API Key não encontrada no env.js");
-    }
-
-    // LIMPEZA: Cortar o texto para os primeiros 3000 caracteres 
-    // para evitar o erro 400 de "Too Many Tokens" no plano grátis
-    const cleanedText = articleText.substring(0, 3000);
-
-    const systemPrompt = "You are 'Nuance'. Provide 3 short, logical counter-arguments to the text. Use bullet points. Respond in the same language as the article.";
-
-    const response = await fetch(url, {
-        method: "POST",
-        headers: {
-            "Authorization": `Bearer ${ENV.GROQ_API_KEY}`,
-            "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-            // MODELO: Vamos usar o Versatile que é mais estável
-            model: "llama-3.3-70b-versatile", 
-            messages: [
-                { role: "system", content: systemPrompt },
-                { role: "user", content: `Analyze:\n\n${cleanedText}` }
-            ],
-            temperature: 0.2
-        })
-    });
-
-    if (!response.ok) {
-        // Vamos ver o erro real no log antes de disparar a exceção
         const errorBody = await response.json();
-        console.error("DETALHE DO ERRO 400:", errorBody);
-        throw new Error(`Groq API Error: ${response.status} - ${errorBody.error.message}`);
+        console.error("Groq API Error Detail:", errorBody);
+        throw new Error(`Groq API Error ${response.status}: ${errorBody.error?.message || 'Unknown error'}`);
     }
 
     const data = await response.json();
-    return data.choices[0].message.content;
+    const content = data.choices[0].message.content.trim();
+
+    try {
+        return JSON.parse(content);
+    } catch {
+        // Fallback: treat raw text as plain arguments (no sources)
+        console.warn("⚠️ Could not parse JSON response. Using raw text fallback.");
+        return { arguments: content, sources: [] };
+    }
 }
