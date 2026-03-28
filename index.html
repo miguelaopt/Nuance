@@ -4,1447 +4,1014 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Nuance — Think Beyond the Headline</title>
-<meta name="description" content="Nuance uses AI to burst your filter bubble. Instant counter-arguments, bias scores and fact-checks on any news article — right inside Chrome.">
+<meta name="description" content="Nuance uses Llama 3 AI to burst your filter bubble. Instant counter-arguments, bias scores and fact-checks on any news article.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant:ital,wght@0,300;0,400;0,600;0,700;1,300&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
+<!-- GSAP from official CDN (always works) -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+
 <style>
-/* ═══════════════════════════════════════════════════════
-   RESET & ROOT
-═══════════════════════════════════════════════════════ */
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+/* ── Reset ── */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
 
-:root {
-  --bg:       #04040b;
-  --bg-2:     #080811;
-  --surface:  rgba(255,255,255,0.04);
-  --surface-2:rgba(255,255,255,0.07);
-  --border:   rgba(255,255,255,0.08);
-  --border-2: rgba(255,255,255,0.13);
-  --text:     #f5f5f7;
-  --sub:      #86868b;
-  --sub-2:    #636368;
-  --blue:     #2997ff;
-  --blue-dk:  #0071e3;
-  --gold:     #f5c842;
-  --green:    #34c759;
-  --red:      #ff3b30;
-  --orange:   #ff9f0a;
-  --r-card:   20px;
+:root{
+  --black:#000;
+  --bg:#04040c;
+  --text:#f5f5f7;
+  --sub:#86868b;
+  --sub2:#3d3d44;
+  --border:rgba(255,255,255,0.07);
+  --border2:rgba(255,255,255,0.12);
+  --blue:#2997ff;
+  --blue2:#0071e3;
+  --purple:#a78bfa;
+  /* The signature gradient */
+  --grad:linear-gradient(135deg,#a8d8ff 0%,#2997ff 38%,#b89dff 70%,#d4a8ff 100%);
 }
 
-html { scroll-behavior: smooth; }
-
-body {
-  background: var(--bg);
-  color: var(--text);
-  font-family: 'Outfit', -apple-system, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  overflow-x: hidden;
-  line-height: 1.6;
+body{
+  background:var(--black);
+  color:var(--text);
+  font-family:'Outfit',-apple-system,sans-serif;
+  -webkit-font-smoothing:antialiased;
+  overflow-x:hidden;
 }
 
-a { text-decoration: none; color: inherit; }
-
-/* ═══════════════════════════════════════════════════════
-   NOISE TEXTURE OVERLAY
-═══════════════════════════════════════════════════════ */
-body::before {
-  content: '';
-  position: fixed; inset: 0; z-index: 0;
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
-  pointer-events: none;
-  opacity: 0.6;
+/* ── Gradient text ── */
+.gt{
+  background:var(--grad);
+  -webkit-background-clip:text;background-clip:text;
+  -webkit-text-fill-color:transparent;
 }
 
-/* ═══════════════════════════════════════════════════════
-   NUANCE LOGO SVG COMPONENT
-═══════════════════════════════════════════════════════ */
-.nuance-logo {
-  width: 36px; height: 36px;
-  flex-shrink: 0;
-}
-.nuance-logo-lg {
-  width: 72px; height: 72px;
-}
-
-/* ═══════════════════════════════════════════════════════
+/* ════════════════════════════════
    NAV
-═══════════════════════════════════════════════════════ */
-nav {
-  position: fixed; top: 0; left: 0; right: 0; z-index: 1000;
-  padding: 0 24px;
-  background: rgba(4, 4, 11, 0.7);
-  backdrop-filter: blur(24px) saturate(180%);
-  -webkit-backdrop-filter: blur(24px) saturate(180%);
-  border-bottom: 0.5px solid var(--border);
-  transition: background 0.3s ease;
+════════════════════════════════ */
+nav{
+  position:fixed;top:0;left:0;right:0;z-index:999;
+  height:54px;display:flex;align-items:center;padding:0 28px;
+  transition:background .4s,backdrop-filter .4s,border-color .4s;
+  border-bottom:0.5px solid transparent;
 }
-
-.nav-inner {
-  max-width: 1100px; margin: 0 auto;
-  display: flex; align-items: center; justify-content: space-between;
-  height: 58px;
+nav.on{
+  background:rgba(0,0,0,.75);
+  backdrop-filter:blur(22px) saturate(180%);
+  -webkit-backdrop-filter:blur(22px) saturate(180%);
+  border-color:var(--border);
 }
+.nav-in{max-width:1080px;margin:0 auto;width:100%;display:flex;align-items:center;justify-content:space-between}
+.logo{display:flex;align-items:center;gap:9px;font-family:'Cormorant',serif;font-size:20px;font-weight:600;color:var(--text);text-decoration:none}
+.nav-links{display:flex;gap:28px;list-style:none}
+.nav-links a{font-size:13px;color:var(--sub);text-decoration:none;transition:color .2s}
+.nav-links a:hover{color:var(--text)}
+.nav-btn{background:var(--blue);color:#fff;font-size:13px;font-weight:600;padding:7px 18px;border-radius:20px;text-decoration:none;transition:opacity .15s,transform .15s}
+.nav-btn:hover{opacity:.85;transform:scale(1.02)}
 
-.nav-brand {
-  display: flex; align-items: center; gap: 10px;
-  font-family: 'Cormorant', serif;
-  font-size: 22px; font-weight: 600; letter-spacing: -0.3px;
-}
-
-.nav-links {
-  display: flex; align-items: center; gap: 32px;
-  list-style: none;
-}
-
-.nav-links a {
-  font-size: 14px; font-weight: 400; color: var(--sub);
-  transition: color 0.2s;
-}
-.nav-links a:hover { color: var(--text); }
-
-.nav-cta {
-  background: var(--blue);
-  color: #fff;
-  font-size: 13.5px; font-weight: 600;
-  padding: 8px 18px;
-  border-radius: 20px;
-  transition: opacity 0.15s, transform 0.1s;
-  display: flex; align-items: center; gap: 6px;
-}
-.nav-cta:hover { opacity: 0.88; transform: scale(1.02); }
-
-/* ═══════════════════════════════════════════════════════
+/* ════════════════════════════════
    HERO
-═══════════════════════════════════════════════════════ */
-.hero {
-  position: relative;
-  min-height: 100vh;
-  display: flex; flex-direction: column;
-  align-items: center; justify-content: center;
-  padding: 120px 24px 80px;
-  overflow: hidden;
-  text-align: center;
+════════════════════════════════ */
+.hero{
+  min-height:100vh;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;
+  text-align:center;padding:80px 24px 60px;
+  position:relative;overflow:hidden;
 }
 
-/* Animated orbs */
-.orb {
-  position: absolute;
-  border-radius: 50%;
-  filter: blur(80px);
-  pointer-events: none;
-  animation: orbFloat 12s ease-in-out infinite;
+/* Orbs */
+.orb{position:absolute;border-radius:50%;pointer-events:none;filter:blur(70px)}
+.o1{width:700px;height:700px;top:-200px;left:-200px;background:radial-gradient(circle,rgba(41,151,255,.13) 0%,transparent 65%)}
+.o2{width:600px;height:600px;top:100px;right:-200px;background:radial-gradient(circle,rgba(167,139,250,.10) 0%,transparent 65%)}
+.o3{width:500px;height:500px;bottom:-80px;left:30%;background:radial-gradient(circle,rgba(0,180,140,.07) 0%,transparent 65%)}
+
+/* hero animate-in states */
+.hero-eye,.hero-h1,.hero-h2,.hero-sub,.hero-btns,.hero-card{opacity:0;transform:translateY(28px)}
+
+.hero-eye{
+  display:inline-flex;align-items:center;gap:7px;
+  font-size:11.5px;font-weight:600;letter-spacing:1.6px;text-transform:uppercase;color:var(--blue);
+  background:rgba(41,151,255,.08);border:0.5px solid rgba(41,151,255,.22);
+  padding:6px 16px;border-radius:20px;margin-bottom:32px;
 }
-.orb-1 {
-  width: 600px; height: 600px;
-  top: -100px; left: -200px;
-  background: radial-gradient(circle, rgba(41,151,255,0.15) 0%, transparent 70%);
-  animation-delay: 0s;
+.hero-h1{
+  font-family:'Cormorant',serif;
+  font-size:clamp(60px,10vw,124px);
+  font-weight:300;letter-spacing:-3px;line-height:.92;margin-bottom:2px;
 }
-.orb-2 {
-  width: 500px; height: 500px;
-  top: 100px; right: -150px;
-  background: radial-gradient(circle, rgba(120,60,255,0.12) 0%, transparent 70%);
-  animation-delay: -4s;
+.hero-h1 em{font-style:italic;background:var(--grad);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+.hero-h2{
+  font-family:'Cormorant',serif;
+  font-size:clamp(60px,10vw,124px);
+  font-weight:600;letter-spacing:-3px;line-height:1.0;margin-bottom:32px;
 }
-.orb-3 {
-  width: 400px; height: 400px;
-  bottom: 0; left: 30%;
-  background: radial-gradient(circle, rgba(0,180,150,0.08) 0%, transparent 70%);
-  animation-delay: -8s;
+.hero-sub{font-size:clamp(16px,1.8vw,19px);font-weight:300;color:var(--sub);max-width:520px;line-height:1.65;margin-bottom:44px}
+.hero-btns{display:flex;align-items:center;gap:12px;flex-wrap:wrap;justify-content:center;margin-bottom:72px}
+
+.btn-blue{
+  display:flex;align-items:center;gap:7px;
+  background:var(--blue);color:#fff;font-size:15px;font-weight:600;
+  padding:14px 28px;border-radius:14px;text-decoration:none;
+  transition:all .2s;
+}
+.btn-blue:hover{background:#3aa3ff;transform:translateY(-2px);box-shadow:0 12px 28px rgba(41,151,255,.38)}
+.btn-ghost{color:var(--sub);font-size:15px;text-decoration:none;transition:color .2s}
+.btn-ghost:hover{color:var(--text)}
+
+/* ── Extension card ── */
+.hero-card{position:relative}
+.ext-card{
+  width:326px;text-align:left;
+  background:rgba(255,255,255,.055);
+  backdrop-filter:blur(32px) saturate(180%);-webkit-backdrop-filter:blur(32px) saturate(180%);
+  border:0.5px solid rgba(255,255,255,.11);border-radius:22px;overflow:hidden;
+  box-shadow:0 32px 80px rgba(0,0,0,.7),0 0 0 0.5px rgba(255,255,255,.04);
+}
+.ec-glow{
+  position:absolute;bottom:-48px;left:50%;transform:translateX(-50%);
+  width:260px;height:70px;
+  background:radial-gradient(ellipse,rgba(41,151,255,.28) 0%,transparent 70%);
+  filter:blur(20px);pointer-events:none;
 }
 
-@keyframes orbFloat {
-  0%, 100% { transform: translateY(0) translateX(0) scale(1); }
-  33%       { transform: translateY(-30px) translateX(20px) scale(1.05); }
-  66%       { transform: translateY(20px) translateX(-15px) scale(0.96); }
+/* card parts */
+.ec-hd{display:flex;align-items:center;justify-content:space-between;padding:11px 14px 10px;border-bottom:0.5px solid rgba(255,255,255,.07)}
+.ec-mac{display:flex;gap:5px}
+.ec-dot{width:10px;height:10px;border-radius:50%}
+.ec-r{background:#ff5f56}.ec-y{background:#ffbd2e}
+.ec-brand{font-size:12px;font-weight:700;color:rgba(255,255,255,.82);display:flex;align-items:center;gap:6px}
+.ec-pill{font-size:10px;color:rgba(255,255,255,.32);background:rgba(255,255,255,.07);padding:2px 8px;border-radius:8px}
+.ec-cb{display:flex;gap:8px;padding:9px 14px;background:rgba(255,159,10,.09);border-bottom:0.5px solid rgba(255,159,10,.2);font-size:11.5px}
+.ec-cb-l{font-weight:700;color:#ffb340;display:block;margin-bottom:2px}
+.ec-cb-s{font-size:10.5px;color:rgba(255,179,64,.7)}
+.ec-body{padding:12px 14px 14px}
+.ec-br{display:flex;justify-content:space-between;font-size:10px;font-weight:700;text-transform:uppercase;color:rgba(255,255,255,.3);margin-bottom:6px;letter-spacing:.4px}
+.ec-brs{color:#ff3b30!important}
+.ec-bb{height:5px;background:rgba(255,255,255,.07);border-radius:4px;overflow:hidden;margin-bottom:14px}
+.ec-bf{height:100%;background:#ff3b30;border-radius:4px;animation:bfGrow 2s .6s cubic-bezier(.34,1.56,.64,1) both}
+@keyframes bfGrow{from{width:0}to{width:78%}}
+.ec-arg{display:flex;gap:9px;padding:8px 0}
+.ec-arg+.ec-arg{border-top:0.5px solid rgba(255,255,255,.06)}
+.ec-n{width:16px;height:16px;border-radius:50%;background:#2997ff;color:#fff;font-size:8.5px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px}
+.ec-t{font-size:12px;color:rgba(255,255,255,.72);line-height:1.4}
+.ec-src{border-top:0.5px solid rgba(255,255,255,.07);padding:8px 14px 10px}
+.ec-sl{font-size:9.5px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:rgba(255,255,255,.22);margin-bottom:5px}
+.ec-si{display:flex;align-items:center;gap:6px;font-size:11.5px;font-weight:500;color:#2997ff;padding:3px 0}
+.ec-sd{width:5px;height:5px;border-radius:50%;background:#2997ff;opacity:.45;flex-shrink:0}
+
+/* ════════════════════════════════
+   STATS
+════════════════════════════════ */
+.stats{
+  padding:64px 28px;
+  border-top:0.5px solid var(--border);
+  border-bottom:0.5px solid var(--border);
+  background:rgba(255,255,255,.018);
 }
+.stats-g{max-width:900px;margin:0 auto;display:grid;grid-template-columns:repeat(3,1fr)}
+.stat{text-align:center;padding:0 24px;border-right:0.5px solid var(--border)}
+.stat:last-child{border-right:none}
+.stat-n{font-family:'Cormorant',serif;font-size:64px;font-weight:300;letter-spacing:-3px;line-height:1;margin-bottom:8px}
+.stat-l{font-size:13px;color:var(--sub)}
 
-/* grid lines */
-.hero::after {
-  content: '';
-  position: absolute; inset: 0;
-  background-image:
-    linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px);
-  background-size: 64px 64px;
-  mask-image: radial-gradient(ellipse at center, black 20%, transparent 75%);
-  pointer-events: none;
-}
+/* ════════════════════════════════
+   SECTIONS COMMON
+════════════════════════════════ */
+section{position:relative;z-index:1}
+.inner{max-width:1080px;margin:0 auto;padding:0 32px}
+.eyebrow{font-size:11px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:var(--blue);display:block;margin-bottom:14px}
+.stitle{font-family:'Cormorant',serif;font-size:clamp(38px,5vw,64px);font-weight:300;letter-spacing:-2px;line-height:1.06;color:var(--text);margin-bottom:18px}
+.stitle strong{font-weight:600}
+.ssub{font-size:17px;font-weight:300;color:var(--sub);line-height:1.7;max-width:520px}
 
-.hero-eyebrow {
-  display: inline-flex; align-items: center; gap: 8px;
-  font-size: 12px; font-weight: 600; letter-spacing: 1.5px; text-transform: uppercase;
-  color: var(--blue);
-  background: rgba(41,151,255,0.1);
-  border: 0.5px solid rgba(41,151,255,0.25);
-  padding: 6px 16px; border-radius: 20px;
-  margin-bottom: 28px;
-  opacity: 0; animation: fadeUp 0.7s 0.2s ease both;
-}
+/* ════════════════════════════════
+   PROBLEM
+════════════════════════════════ */
+.problem{padding:120px 28px;background:linear-gradient(180deg,var(--black) 0%,#06061a 50%,var(--black) 100%)}
+.problem-g{max-width:1080px;margin:0 auto;display:grid;grid-template-columns:1fr 1fr;gap:80px;align-items:center}
+.prob-pts{list-style:none;margin-top:36px;display:flex;flex-direction:column;gap:22px}
+.pp{display:flex;gap:14px;align-items:flex-start}
+.pp-ico{width:38px;height:38px;border-radius:10px;background:rgba(255,255,255,.04);border:0.5px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0;margin-top:2px}
+.pp-h{font-size:15px;font-weight:600;margin-bottom:3px}
+.pp-d{font-size:14px;color:var(--sub);line-height:1.55}
 
-.hero-title {
-  font-family: 'Cormorant', serif;
-  font-size: clamp(52px, 8vw, 100px);
-  font-weight: 300;
-  letter-spacing: -2px;
-  line-height: 1.0;
-  margin-bottom: 8px;
-  opacity: 0; animation: fadeUp 0.8s 0.4s ease both;
-}
+/* Bubble vis */
+.bubble-vis{display:flex;align-items:center;justify-content:center;min-height:300px;position:relative}
+.bub-wrap{position:relative;width:280px;height:280px}
+.bub{position:absolute;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:500;text-align:center;padding:16px;line-height:1.3;animation:bubPulse 4s ease-in-out infinite}
+.b1{width:170px;height:170px;top:20px;left:10px;background:rgba(41,151,255,.07);border:0.5px solid rgba(41,151,255,.18);color:rgba(255,255,255,.55);animation-delay:0s}
+.b2{width:140px;height:140px;top:50px;right:10px;background:rgba(120,60,255,.07);border:0.5px solid rgba(120,60,255,.18);color:rgba(255,255,255,.45);animation-delay:-1.5s}
+.b3{width:110px;height:110px;bottom:20px;left:55px;background:rgba(255,159,10,.06);border:0.5px solid rgba(255,159,10,.18);color:rgba(255,255,255,.4);animation-delay:-3s}
+.bub-pop{position:absolute;width:60px;height:60px;border-radius:50%;background:rgba(41,151,255,.15);border:1.5px solid #2997ff;top:50%;left:50%;transform:translate(-50%,-50%);animation:pop 3s ease-out infinite 2s}
+@keyframes bubPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.04)}}
+@keyframes pop{0%{opacity:1;transform:translate(-50%,-50%) scale(0)}70%{opacity:.5}100%{opacity:0;transform:translate(-50%,-50%) scale(3)}}
 
-.hero-title em {
-  font-style: italic;
-  background: linear-gradient(135deg, #a8d8ff 0%, #2997ff 40%, #a78bfa 100%);
-  -webkit-background-clip: text; background-clip: text;
-  -webkit-text-fill-color: transparent;
-}
-
-.hero-title-2 {
-  font-family: 'Cormorant', serif;
-  font-size: clamp(52px, 8vw, 100px);
-  font-weight: 600;
-  letter-spacing: -2px;
-  line-height: 1.05;
-  margin-bottom: 32px;
-  opacity: 0; animation: fadeUp 0.8s 0.5s ease both;
-}
-
-.hero-sub {
-  font-size: clamp(16px, 2vw, 20px);
-  font-weight: 300;
-  color: var(--sub);
-  max-width: 560px;
-  line-height: 1.6;
-  margin-bottom: 48px;
-  opacity: 0; animation: fadeUp 0.8s 0.65s ease both;
-}
-
-.hero-actions {
-  display: flex; align-items: center; gap: 14px;
-  flex-wrap: wrap; justify-content: center;
-  margin-bottom: 72px;
-  opacity: 0; animation: fadeUp 0.8s 0.8s ease both;
-}
-
-.btn-primary {
-  display: flex; align-items: center; gap: 8px;
-  background: var(--blue);
-  color: #fff;
-  font-size: 15px; font-weight: 600;
-  padding: 14px 28px;
-  border-radius: 14px;
-  transition: all 0.2s;
-}
-.btn-primary:hover { background: #3aa3ff; transform: translateY(-2px); box-shadow: 0 12px 30px rgba(41,151,255,0.35); }
-.btn-primary:active { transform: scale(0.98); }
-
-.btn-ghost {
-  display: flex; align-items: center; gap: 8px;
-  background: var(--surface);
-  color: var(--sub);
-  font-size: 15px; font-weight: 500;
-  padding: 14px 24px;
-  border-radius: 14px;
-  border: 0.5px solid var(--border);
-  transition: all 0.2s;
-}
-.btn-ghost:hover { border-color: var(--border-2); color: var(--text); background: var(--surface-2); }
-
-/* ── Extension card preview ── */
-.hero-preview {
-  position: relative;
-  opacity: 0; animation: fadeUp 0.9s 1s ease both;
-}
-
-.preview-card {
-  width: 340px;
-  background: rgba(255,255,255,0.07);
-  backdrop-filter: blur(32px) saturate(200%);
-  -webkit-backdrop-filter: blur(32px) saturate(200%);
-  border: 0.5px solid rgba(255,255,255,0.12);
-  border-radius: 22px;
-  overflow: hidden;
-  box-shadow: 0 30px 80px rgba(0,0,0,0.6), 0 0 0 0.5px rgba(255,255,255,0.05);
-  text-align: left;
-  animation: floatCard 6s ease-in-out infinite;
-}
-
-@keyframes floatCard {
-  0%, 100% { transform: translateY(0); }
-  50%       { transform: translateY(-10px); }
-}
-
-.pc-header {
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 12px 16px 10px;
-  border-bottom: 0.5px solid rgba(255,255,255,0.07);
-}
-.pc-mac { display: flex; gap: 5px; }
-.pc-dot { width: 10px; height: 10px; border-radius: 50%; }
-.pc-dot-r { background: #ff5f56; }
-.pc-dot-y { background: #ffbd2e; }
-.pc-name { font-size: 12px; font-weight: 700; color: rgba(255,255,255,0.8); letter-spacing: -0.1px; display: flex; align-items: center; gap: 6px; }
-.pc-mode { font-size: 10px; color: rgba(255,255,255,0.35); background: rgba(255,255,255,0.07); padding: 3px 9px; border-radius: 10px; }
-
-.pc-banner {
-  display: flex; align-items: flex-start; gap: 8px;
-  padding: 9px 14px;
-  background: rgba(255,159,10,0.1);
-  border-bottom: 0.5px solid rgba(255,159,10,0.2);
-  font-size: 11.5px;
-}
-.pc-banner-label { font-weight: 700; color: #ffb340; display: block; margin-bottom: 1px; }
-.pc-banner-text { color: rgba(255,179,64,0.75); font-size: 11px; }
-
-.pc-body { padding: 12px 14px 14px; }
-
-.pc-bias {
-  margin-bottom: 13px;
-}
-.pc-bias-row { display: flex; justify-content: space-between; font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.3px; color: rgba(255,255,255,0.35); margin-bottom: 6px; }
-.pc-bias-score { color: #ff3b30!important; }
-.pc-bias-bar { height: 5px; background: rgba(255,255,255,0.08); border-radius: 4px; overflow: hidden; }
-.pc-bias-fill { height: 100%; background: #ff3b30; border-radius: 4px; animation: biasGrow 1.8s 1.5s cubic-bezier(0.34,1.56,0.64,1) both; }
-@keyframes biasGrow { from { width: 0; } to { width: 78%; } }
-
-.pc-args { display: flex; flex-direction: column; gap: 0; }
-.pc-arg { display: flex; gap: 9px; padding: 8px 0; border-top: 0.5px solid rgba(255,255,255,0.06); }
-.pc-arg:first-child { border-top: none; }
-.pc-num { width: 16px; height: 16px; background: #2997ff; border-radius: 50%; font-size: 8.5px; font-weight: 700; color: #fff; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 1px; }
-.pc-text { font-size: 12px; line-height: 1.4; color: rgba(255,255,255,0.75); }
-
-.pc-sources {
-  border-top: 0.5px solid rgba(255,255,255,0.07);
-  padding: 8px 14px 10px;
-}
-.pc-sources-label { font-size: 9.5px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: rgba(255,255,255,0.25); margin-bottom: 6px; }
-.pc-source { display: flex; align-items: center; gap: 7px; font-size: 11.5px; font-weight: 500; color: #2997ff; padding: 4px 0; }
-.pc-source-dot { width: 5px; height: 5px; border-radius: 50%; background: #2997ff; opacity: 0.5; flex-shrink: 0; }
-
-/* glow under card */
-.preview-glow {
-  position: absolute;
-  bottom: -40px; left: 50%; transform: translateX(-50%);
-  width: 280px; height: 80px;
-  background: radial-gradient(ellipse, rgba(41,151,255,0.3) 0%, transparent 70%);
-  pointer-events: none;
-  filter: blur(20px);
-}
-
-@keyframes fadeUp {
-  from { opacity: 0; transform: translateY(24px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
-
-/* ═══════════════════════════════════════════════════════
-   STATS BAR
-═══════════════════════════════════════════════════════ */
-.stats-bar {
-  background: var(--surface);
-  border-top: 0.5px solid var(--border);
-  border-bottom: 0.5px solid var(--border);
-  padding: 40px 24px;
-}
-
-.stats-inner {
-  max-width: 900px; margin: 0 auto;
-  display: grid; grid-template-columns: repeat(3, 1fr);
-  gap: 0;
-}
-
-.stat-item {
-  text-align: center;
-  padding: 0 24px;
-  border-right: 0.5px solid var(--border);
-}
-.stat-item:last-child { border-right: none; }
-
-.stat-num {
-  font-family: 'Cormorant', serif;
-  font-size: 52px; font-weight: 300;
-  letter-spacing: -2px;
-  color: var(--text);
-  line-height: 1;
-  margin-bottom: 6px;
-}
-.stat-num span {
-  background: linear-gradient(135deg, #a8d8ff, #2997ff);
-  -webkit-background-clip: text; background-clip: text;
-  -webkit-text-fill-color: transparent;
-}
-
-.stat-label { font-size: 13px; color: var(--sub); font-weight: 400; }
-
-/* ═══════════════════════════════════════════════════════
-   SECTION COMMONS
-═══════════════════════════════════════════════════════ */
-section { padding: 100px 24px; position: relative; z-index: 1; }
-
-.section-inner { max-width: 1100px; margin: 0 auto; }
-
-.section-eyebrow {
-  font-size: 11.5px; font-weight: 600; letter-spacing: 1.8px;
-  text-transform: uppercase; color: var(--blue);
-  margin-bottom: 16px;
-  display: block;
-}
-
-.section-title {
-  font-family: 'Cormorant', serif;
-  font-size: clamp(36px, 5vw, 60px);
-  font-weight: 300;
-  letter-spacing: -1.5px;
-  line-height: 1.1;
-  margin-bottom: 20px;
-  color: var(--text);
-}
-
-.section-title strong { font-weight: 600; }
-
-.section-sub {
-  font-size: 17px; font-weight: 300;
-  color: var(--sub); line-height: 1.65;
-  max-width: 540px;
-}
-
-/* scroll reveal */
-.reveal {
-  opacity: 0; transform: translateY(30px);
-  transition: opacity 0.7s ease, transform 0.7s ease;
-}
-.reveal.visible { opacity: 1; transform: translateY(0); }
-.reveal-delay-1 { transition-delay: 0.1s; }
-.reveal-delay-2 { transition-delay: 0.2s; }
-.reveal-delay-3 { transition-delay: 0.3s; }
-.reveal-delay-4 { transition-delay: 0.4s; }
-.reveal-delay-5 { transition-delay: 0.5s; }
-
-/* ═══════════════════════════════════════════════════════
-   PROBLEM SECTION
-═══════════════════════════════════════════════════════ */
-.problem-section {
-  background: linear-gradient(180deg, var(--bg) 0%, #07071a 50%, var(--bg) 100%);
-}
-
-.problem-grid {
-  display: grid; grid-template-columns: 1fr 1fr;
-  gap: 60px; align-items: center;
-  margin-top: 64px;
-}
-
-.problem-visual {
-  position: relative;
-  height: 360px;
-  display: flex; align-items: center; justify-content: center;
-}
-
-/* Bubble animation */
-.bubble-wrap {
-  position: relative; width: 300px; height: 300px;
-}
-
-.bubble {
-  position: absolute; border-radius: 50%;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 13px; font-weight: 500;
-  text-align: center; padding: 16px;
-  line-height: 1.3;
-}
-
-.b1 {
-  width: 180px; height: 180px; top: 20px; left: 10px;
-  background: rgba(41,151,255,0.08);
-  border: 0.5px solid rgba(41,151,255,0.2);
-  color: rgba(255,255,255,0.6);
-  animation: bubblePulse 4s ease-in-out infinite;
-}
-.b2 {
-  width: 140px; height: 140px; top: 60px; right: 20px;
-  background: rgba(120,60,255,0.08);
-  border: 0.5px solid rgba(120,60,255,0.2);
-  color: rgba(255,255,255,0.5);
-  animation: bubblePulse 4s ease-in-out infinite 1.5s;
-}
-.b3 {
-  width: 110px; height: 110px; bottom: 20px; left: 60px;
-  background: rgba(255,159,10,0.08);
-  border: 0.5px solid rgba(255,159,10,0.2);
-  color: rgba(255,255,255,0.4);
-  animation: bubblePulse 4s ease-in-out infinite 3s;
-}
-.b-pop {
-  position: absolute;
-  width: 60px; height: 60px;
-  border-radius: 50%;
-  background: rgba(41,151,255,0.15);
-  border: 1.5px solid #2997ff;
-  top: 50%; left: 50%;
-  transform: translate(-50%,-50%);
-  animation: pop 3s ease-out infinite 2s;
-}
-@keyframes bubblePulse {
-  0%,100%{transform:scale(1)} 50%{transform:scale(1.04)}
-}
-@keyframes pop {
-  0%{opacity:1;transform:translate(-50%,-50%) scale(0)}
-  70%{opacity:0.6;}
-  100%{opacity:0;transform:translate(-50%,-50%) scale(3)}
-}
-
-.problem-text { }
-.problem-points { list-style: none; margin-top: 32px; display: flex; flex-direction: column; gap: 20px; }
-.pp-item { display: flex; gap: 14px; align-items: flex-start; }
-.pp-icon { width: 36px; height: 36px; border-radius: 10px; background: var(--surface); border: 0.5px solid var(--border); display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0; margin-top: 2px; }
-.pp-title { font-size: 15px; font-weight: 600; margin-bottom: 3px; }
-.pp-desc  { font-size: 14px; color: var(--sub); line-height: 1.5; }
-
-/* ═══════════════════════════════════════════════════════
+/* ════════════════════════════════
    FEATURES GRID
-═══════════════════════════════════════════════════════ */
-.features-section { background: var(--bg-2); }
+════════════════════════════════ */
+.features{padding:120px 28px;background:rgba(255,255,255,.015);border-top:0.5px solid var(--border)}
+.feat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:64px}
 
-.features-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 16px;
-  margin-top: 64px;
+/* Top row: one big card spanning all 3, showing bias meter */
+.fc-hero{
+  grid-column:1/-1;
+  background:rgba(255,255,255,.03);
+  border:0.5px solid var(--border);
+  border-radius:18px;padding:32px 36px;
+  display:flex;align-items:center;gap:60px;
+  transition:all .3s ease;cursor:default;
+  position:relative;overflow:hidden;
 }
+.fc-hero::after{content:'';position:absolute;inset:0;background:radial-gradient(circle at 80% 50%,rgba(41,151,255,.06) 0%,transparent 55%);pointer-events:none}
+.fc-hero:hover{border-color:var(--border2);box-shadow:0 20px 50px rgba(0,0,0,.45)}
+.fc-hero-body{flex:1}
 
-.feat-card {
-  background: var(--surface);
-  border: 0.5px solid var(--border);
-  border-radius: var(--r-card);
-  padding: 28px 26px;
-  transition: all 0.3s ease;
-  cursor: default;
-  position: relative; overflow: hidden;
+.fc{
+  background:rgba(255,255,255,.03);
+  border:0.5px solid var(--border);
+  border-radius:18px;padding:28px 24px;
+  transition:all .3s ease;cursor:default;
+  position:relative;overflow:hidden;
 }
+.fc::after{content:'';position:absolute;inset:0;background:radial-gradient(circle at top right,rgba(41,151,255,.05) 0%,transparent 60%);opacity:0;transition:opacity .3s}
+.fc:hover{border-color:var(--border2);transform:translateY(-4px);box-shadow:0 20px 50px rgba(0,0,0,.45)}
+.fc:hover::after{opacity:1}
+.fc-ico{width:44px;height:44px;border-radius:12px;background:rgba(255,255,255,.05);border:0.5px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:20px;margin-bottom:18px;flex-shrink:0}
+.fc-h{font-size:16px;font-weight:600;margin-bottom:8px;letter-spacing:-.2px}
+.fc-d{font-size:13.5px;color:var(--sub);line-height:1.55}
 
-.feat-card::before {
-  content: '';
-  position: absolute; inset: 0;
-  background: radial-gradient(circle at top right, rgba(41,151,255,0.05) 0%, transparent 60%);
-  opacity: 0; transition: opacity 0.3s;
-}
+/* Inline bias demo */
+.bias-demo{width:190px;flex-shrink:0;min-height:80px}
+.bd-r{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.bd-l{font-size:11px;color:var(--sub);width:84px;flex-shrink:0}
+.bd-bg{flex:1;height:4px;background:rgba(255,255,255,.07);border-radius:4px;overflow:hidden}
+.bd-f{height:100%;border-radius:4px}
+.bd-v{font-size:10px;font-weight:700;width:28px;text-align:right;flex-shrink:0}
+.bdr1 .bd-f{background:#ff3b30;animation:bd1 1.6s .4s ease both}
+.bdr1 .bd-v{color:#ff3b30}
+.bdr2 .bd-f{background:#ffcc00;animation:bd2 1.6s .7s ease both}
+.bdr2 .bd-v{color:#ffcc00}
+.bdr3 .bd-f{background:#34c759;animation:bd3 1.6s 1s ease both}
+.bdr3 .bd-v{color:#34c759}
+@keyframes bd1{from{width:0}to{width:78%}}
+@keyframes bd2{from{width:0}to{width:46%}}
+@keyframes bd3{from{width:0}to{width:19%}}
 
-.feat-card:hover { border-color: var(--border-2); transform: translateY(-4px); box-shadow: 0 20px 50px rgba(0,0,0,0.4); }
-.feat-card:hover::before { opacity: 1; }
+/* ════════════════════════════════
+   HOW IT WORKS (timeline)
+════════════════════════════════ */
+.how{padding:120px 28px;border-top:0.5px solid var(--border)}
+.timeline{max-width:720px;margin:64px auto 0;position:relative}
+#timeline-line{position:absolute;left:28px;top:40px;bottom:40px;width:1px;background:linear-gradient(to bottom,transparent,rgba(41,151,255,.3) 20%,rgba(167,139,250,.3) 80%,transparent);pointer-events:none}
+.step{display:flex;gap:28px;align-items:flex-start;padding:32px 0;border-bottom:0.5px solid var(--border)}
+.step:last-child{border-bottom:none}
+.step-n{width:56px;height:56px;border-radius:50%;flex-shrink:0;background:rgba(255,255,255,.04);border:0.5px solid var(--border);display:flex;align-items:center;justify-content:center;font-family:'Cormorant',serif;font-size:26px;font-weight:300;color:var(--blue);position:relative;z-index:1;transition:all .3s}
+.step:hover .step-n{background:rgba(41,151,255,.1);border-color:var(--blue);box-shadow:0 0 20px rgba(41,151,255,.2)}
+.step-b{padding-top:10px}
+.step-h{font-size:20px;font-weight:600;letter-spacing:-.3px;margin-bottom:8px}
+.step-d{font-size:15px;color:var(--sub);line-height:1.65;max-width:500px}
+.step-tag{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--blue);background:rgba(41,151,255,.08);border:0.5px solid rgba(41,151,255,.2);padding:4px 12px;border-radius:20px;margin-top:10px}
 
-.feat-icon {
-  width: 44px; height: 44px;
-  border-radius: 12px;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 20px;
-  margin-bottom: 18px;
-  background: var(--surface-2);
-  border: 0.5px solid var(--border);
-}
-
-.feat-title { font-size: 16px; font-weight: 600; margin-bottom: 8px; letter-spacing: -0.2px; }
-.feat-desc  { font-size: 13.5px; color: var(--sub); line-height: 1.55; }
-
-.feat-card.large { grid-column: span 2; display: flex; align-items: center; gap: 40px; }
-.feat-card.large .feat-content { flex: 1; }
-.feat-card.large .feat-visual { flex-shrink: 0; }
-
-/* Bias meter visual */
-.bias-demo {
-  width: 180px;
-  display: flex; flex-direction: column; gap: 10px;
-}
-.bd-row { display: flex; align-items: center; gap: 10px; }
-.bd-label { font-size: 11px; color: var(--sub); width: 80px; flex-shrink: 0; }
-.bd-bar-bg { flex: 1; height: 4px; background: rgba(255,255,255,0.08); border-radius: 4px; overflow: hidden; }
-.bd-bar { height: 100%; border-radius: 4px; }
-.bd-val { font-size: 10px; font-weight: 600; width: 30px; text-align: right; flex-shrink: 0; }
-.bd-row-1 .bd-bar { width: 78%; background: var(--red); }
-.bd-row-1 .bd-val { color: var(--red); }
-.bd-row-2 .bd-bar { width: 45%; background: var(--orange); }
-.bd-row-2 .bd-val { color: var(--orange); }
-.bd-row-3 .bd-bar { width: 18%; background: var(--green); }
-.bd-row-3 .bd-val { color: var(--green); }
-
-/* ═══════════════════════════════════════════════════════
-   HOW IT WORKS
-═══════════════════════════════════════════════════════ */
-.steps {
-  display: flex; flex-direction: column; gap: 0;
-  margin-top: 72px;
-  position: relative;
-}
-
-.steps::before {
-  content: '';
-  position: absolute;
-  left: 31px; top: 56px; bottom: 56px;
-  width: 1px;
-  background: linear-gradient(to bottom, var(--border) 0%, rgba(41,151,255,0.3) 50%, var(--border) 100%);
-}
-
-.step {
-  display: flex; gap: 28px; align-items: flex-start;
-  padding: 32px 0;
-  border-bottom: 0.5px solid var(--border);
-}
-.step:last-child { border-bottom: none; }
-
-.step-num {
-  width: 64px; height: 64px; border-radius: 50%; flex-shrink: 0;
-  background: var(--surface);
-  border: 0.5px solid var(--border);
-  display: flex; align-items: center; justify-content: center;
-  font-family: 'Cormorant', serif;
-  font-size: 28px; font-weight: 300;
-  color: var(--blue);
-  position: relative; z-index: 1;
-  transition: all 0.3s;
-}
-.step:hover .step-num { background: rgba(41,151,255,0.1); border-color: var(--blue); box-shadow: 0 0 20px rgba(41,151,255,0.2); }
-
-.step-body { padding-top: 12px; }
-.step-title { font-size: 20px; font-weight: 600; letter-spacing: -0.3px; margin-bottom: 8px; }
-.step-desc  { font-size: 15px; color: var(--sub); line-height: 1.6; max-width: 520px; }
-
-/* ═══════════════════════════════════════════════════════
+/* ════════════════════════════════
    PRO SECTION
-═══════════════════════════════════════════════════════ */
-.pro-section {
-  background: linear-gradient(180deg, var(--bg) 0%, #06061a 50%, var(--bg) 100%);
+════════════════════════════════ */
+.pro-sec{
+  padding:140px 28px;
+  background:radial-gradient(ellipse at 50% 0%,rgba(100,60,255,.07) 0%,transparent 55%),var(--black);
+  border-top:0.5px solid var(--border);
 }
+.pro-g{max-width:1080px;margin:0 auto;display:grid;grid-template-columns:1fr 1.05fr;gap:80px;align-items:center}
+.pro-feats{list-style:none;margin-top:40px;display:flex;flex-direction:column;gap:18px}
+.pfi{display:flex;gap:14px;align-items:flex-start}
+.pfi-dot{width:22px;height:22px;border-radius:50%;flex-shrink:0;margin-top:2px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700}
+.pfi-dot.f{background:rgba(52,199,89,.12);border:0.5px solid rgba(52,199,89,.25);color:#34c759}
+.pfi-dot.p{background:rgba(245,200,66,.1);border:0.5px solid rgba(245,200,66,.22);color:#f5c842}
+.pfi-h{font-size:15px;font-weight:500;margin-bottom:2px}
+.pfi-d{font-size:13px;color:var(--sub)}
 
-.pro-section-inner {
-  max-width: 1100px; margin: 0 auto;
-  display: grid; grid-template-columns: 1fr 1.1fr;
-  gap: 60px; align-items: center;
+/* PRO card */
+.pro-card-w{position:relative}
+.pro-halo{position:absolute;inset:-60px;background:radial-gradient(circle at 50% 50%,rgba(100,60,255,.15) 0%,transparent 65%);filter:blur(40px);pointer-events:none}
+.pro-card{
+  position:relative;z-index:1;
+  background:linear-gradient(150deg,#07070e 0%,#0d0d1c 40%,#150e38 75%,#1c1050 100%);
+  border:0.5px solid rgba(255,255,255,.09);border-radius:30px;padding:40px;
+  box-shadow:0 40px 100px rgba(0,0,0,.55),inset 0 1px 0 rgba(255,255,255,.06);
+  overflow:hidden;
 }
-
-.pro-copy .section-sub { max-width: 420px; margin-bottom: 40px; }
-
-.pro-feat-list { list-style: none; display: flex; flex-direction: column; gap: 16px; }
-
-.pro-feat-item {
-  display: flex; align-items: flex-start; gap: 14px;
+.pro-card::before{content:'';position:absolute;top:-60px;right:-60px;width:200px;height:200px;background:radial-gradient(circle,rgba(140,80,255,.3) 0%,transparent 70%);pointer-events:none}
+.pro-card::after{content:'';position:absolute;bottom:-50px;left:-40px;width:160px;height:160px;background:radial-gradient(circle,rgba(0,100,255,.18) 0%,transparent 70%);pointer-events:none}
+.pc-badge{display:inline-flex;align-items:center;gap:5px;font-size:9.5px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#f5c842;background:rgba(245,200,66,.09);border:0.5px solid rgba(245,200,66,.2);padding:5px 12px;border-radius:20px;margin-bottom:22px}
+.pc-title{font-family:'Cormorant',serif;font-size:52px;font-weight:300;letter-spacing:-2px;line-height:1.0;color:#fff;margin-bottom:6px}
+.pc-sub{font-size:14px;color:rgba(255,255,255,.35);margin-bottom:30px}
+.pc-price{display:flex;align-items:flex-end;gap:2px;margin-bottom:28px}
+.pc-sym{font-size:26px;font-weight:300;color:rgba(255,255,255,.8);align-self:flex-start;margin-top:14px}
+.pc-num{font-family:'Cormorant',serif;font-size:70px;font-weight:300;letter-spacing:-3px;color:#fff;line-height:1}
+.pc-dec{font-size:30px;font-weight:300;color:rgba(255,255,255,.8);align-self:flex-start;margin-top:16px}
+.pc-mo{font-size:14px;color:rgba(255,255,255,.3);align-self:flex-end;margin-bottom:5px;margin-left:4px}
+.pc-feats{list-style:none;display:flex;flex-direction:column;gap:10px;margin-bottom:28px}
+.pc-fi{display:flex;align-items:center;gap:10px;font-size:14px;color:rgba(255,255,255,.72)}
+.pc-ck{color:#34c759;font-size:12px;font-weight:700}
+.pc-cta{
+  width:100%;display:flex;align-items:center;justify-content:space-between;
+  padding:16px 20px;background:linear-gradient(90deg,#1252c8,#2a84f0);
+  border:none;border-radius:16px;color:#fff;
+  font-family:'Outfit',sans-serif;font-size:15px;font-weight:600;
+  cursor:pointer;transition:all .2s;letter-spacing:-.1px;
 }
-.pfi-check {
-  width: 22px; height: 22px; border-radius: 50%;
-  background: rgba(52,199,89,0.15);
-  border: 0.5px solid rgba(52,199,89,0.3);
-  display: flex; align-items: center; justify-content: center;
-  color: var(--green); font-size: 11px; font-weight: 700;
-  flex-shrink: 0; margin-top: 2px;
+.pc-cta:hover{opacity:.87;transform:translateY(-1px);box-shadow:0 8px 24px rgba(42,132,240,.4)}
+.pc-cta-s{font-size:12px;opacity:.5}
+
+/* ════════════════════════════════
+   TESTIMONIALS / SOCIAL PROOF
+════════════════════════════════ */
+.social{padding:100px 28px;border-top:0.5px solid var(--border);background:rgba(255,255,255,.01)}
+.reviews-g{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:60px}
+.review{background:rgba(255,255,255,.03);border:0.5px solid var(--border);border-radius:18px;padding:28px 24px;transition:all .25s}
+.review:hover{border-color:var(--border2);transform:translateY(-3px)}
+.rv-stars{color:#f5c842;font-size:14px;margin-bottom:14px;letter-spacing:2px}
+.rv-text{font-size:14px;color:rgba(255,255,255,.72);line-height:1.65;margin-bottom:16px;font-style:italic}
+.rv-author{font-size:12.5px;color:var(--sub);font-weight:500}
+
+/* ════════════════════════════════
+   FAQ
+════════════════════════════════ */
+.faq{padding:100px 28px;border-top:0.5px solid var(--border)}
+.faq-list{max-width:680px;margin:60px auto 0;display:flex;flex-direction:column;gap:0}
+.faq-item{border-bottom:0.5px solid var(--border)}
+.faq-q{
+  width:100%;display:flex;align-items:center;justify-content:space-between;
+  padding:20px 0;font-size:16px;font-weight:500;color:var(--text);
+  background:none;border:none;text-align:left;cursor:pointer;font-family:inherit;
+  transition:color .2s;gap:16px;
 }
-.pfi-lock {
-  width: 22px; height: 22px; border-radius: 50%;
-  background: rgba(255,159,10,0.1);
-  border: 0.5px solid rgba(255,159,10,0.25);
-  display: flex; align-items: center; justify-content: center;
-  font-size: 10px;
-  flex-shrink: 0; margin-top: 2px;
+.faq-q:hover{color:var(--blue)}
+.faq-icon{font-size:18px;flex-shrink:0;transition:transform .3s;color:var(--sub)}
+.faq-item.open .faq-icon{transform:rotate(45deg)}
+.faq-a{font-size:14.5px;color:var(--sub);line-height:1.7;max-height:0;overflow:hidden;transition:max-height .4s ease,padding .4s ease}
+.faq-item.open .faq-a{max-height:200px;padding-bottom:20px}
+
+/* ════════════════════════════════
+   PRIVACY
+════════════════════════════════ */
+.privacy{padding:100px 28px;border-top:0.5px solid var(--border);background:rgba(255,255,255,.015)}
+.priv-tabs{display:flex;gap:4px;background:rgba(255,255,255,.04);padding:4px;border-radius:12px;border:0.5px solid var(--border);width:fit-content;margin-bottom:32px}
+.ptab{padding:8px 20px;border-radius:9px;font-size:13px;font-weight:500;background:none;border:none;color:var(--sub);cursor:pointer;font-family:inherit;transition:all .2s}
+.ptab.active{background:rgba(255,255,255,.07);color:var(--text)}
+.priv-doc{background:rgba(255,255,255,.025);border:0.5px solid var(--border);border-radius:18px;max-height:480px;overflow-y:auto}
+.priv-doc::-webkit-scrollbar{width:4px}
+.priv-doc::-webkit-scrollbar-thumb{background:var(--border2);border-radius:4px}
+.priv-in{padding:36px;font-size:14px;line-height:1.75;color:var(--sub)}
+.priv-in h1{font-family:'Cormorant',serif;font-size:28px;font-weight:600;color:var(--text);letter-spacing:-.5px;margin-bottom:6px}
+.priv-in .date{font-size:12px;display:block;margin-bottom:28px}
+.priv-in h2{font-size:14.5px;font-weight:600;color:var(--text);margin:22px 0 8px}
+.priv-in p{margin-bottom:10px}
+.priv-in ul{padding-left:20px;margin-bottom:10px;display:flex;flex-direction:column;gap:4px}
+.priv-in a{color:var(--blue)}
+.priv-in code{font-size:12px;background:rgba(255,255,255,.07);padding:2px 6px;border-radius:4px}
+
+/* ════════════════════════════════
+   CTA FINAL
+════════════════════════════════ */
+.cta-fin{
+  padding:160px 28px;text-align:center;
+  border-top:0.5px solid var(--border);
+  background:radial-gradient(ellipse at 50% 0%,rgba(41,151,255,.07) 0%,transparent 55%),var(--black);
+  position:relative;overflow:hidden;
 }
-.pfi-text-title { font-size: 15px; font-weight: 500; margin-bottom: 2px; }
-.pfi-text-sub   { font-size: 13px; color: var(--sub); }
+.cta-tag{display:inline-flex;align-items:center;gap:8px;font-size:12px;color:var(--sub);background:rgba(255,255,255,.04);border:0.5px solid var(--border);padding:8px 18px;border-radius:20px;margin-bottom:28px}
+.cta-fin .stitle{max-width:600px;margin:0 auto 18px}
+.cta-fin .ssub{margin:0 auto 52px;text-align:center;max-width:460px}
 
-/* The PRO card */
-.pro-card-wrap {
-  position: relative;
-}
-
-.pro-card-glow {
-  position: absolute;
-  inset: -40px;
-  background: radial-gradient(circle at 50% 50%, rgba(100,60,255,0.15) 0%, transparent 65%);
-  filter: blur(30px);
-  pointer-events: none;
-}
-
-.pro-card {
-  position: relative; z-index: 1;
-  background: linear-gradient(150deg, #0a0a14 0%, #0f0f20 40%, #160f38 75%, #1c1050 100%);
-  border: 0.5px solid rgba(255,255,255,0.1);
-  border-radius: 28px;
-  padding: 36px;
-  box-shadow: 0 30px 80px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.07);
-  overflow: hidden;
-}
-
-.pro-card::before {
-  content: '';
-  position: absolute; top: -60px; right: -60px;
-  width: 200px; height: 200px;
-  background: radial-gradient(circle, rgba(130,80,255,0.3) 0%, transparent 70%);
-  pointer-events: none;
-}
-.pro-card::after {
-  content: '';
-  position: absolute; bottom: -50px; left: -40px;
-  width: 160px; height: 160px;
-  background: radial-gradient(circle, rgba(0,120,255,0.2) 0%, transparent 70%);
-  pointer-events: none;
-}
-
-.pro-card-badge {
-  display: inline-flex; align-items: center; gap: 6px;
-  font-size: 10px; font-weight: 700; letter-spacing: 1.8px; text-transform: uppercase;
-  color: var(--gold);
-  background: rgba(245,200,66,0.1); border: 0.5px solid rgba(245,200,66,0.2);
-  padding: 5px 12px; border-radius: 20px;
-  margin-bottom: 20px;
-}
-
-.pro-card-title {
-  font-family: 'Cormorant', serif;
-  font-size: 44px; font-weight: 300;
-  letter-spacing: -1.5px; line-height: 1.05;
-  color: #fff; margin-bottom: 6px;
-}
-
-.pro-card-sub { font-size: 14px; color: rgba(255,255,255,0.4); margin-bottom: 28px; }
-
-.pro-card-price {
-  display: flex; align-items: flex-end; gap: 4px; margin-bottom: 28px;
-}
-.pro-price-num {
-  font-family: 'Cormorant', serif;
-  font-size: 56px; font-weight: 300;
-  letter-spacing: -2px; line-height: 1; color: #fff;
-}
-.pro-price-dec { font-size: 28px; font-weight: 300; color: #fff; align-self: flex-start; margin-top: 10px; }
-.pro-price-period { font-size: 14px; color: rgba(255,255,255,0.35); align-self: flex-end; margin-bottom: 4px; }
-
-.pro-card-feats {
-  list-style: none; display: flex; flex-direction: column; gap: 10px;
-  margin-bottom: 28px;
-}
-.pcf-item { display: flex; align-items: center; gap: 10px; font-size: 14px; color: rgba(255,255,255,0.72); }
-.pcf-check { color: var(--green); font-size: 12px; font-weight: 700; }
-
-.pro-card-cta {
-  display: flex; align-items: center; justify-content: space-between;
-  width: 100%;
-  background: linear-gradient(90deg, #1456cc, #2a84f0);
-  border: none; border-radius: 16px;
-  padding: 16px 20px;
-  color: #fff; font-family: 'Outfit', sans-serif;
-  font-size: 15px; font-weight: 600; letter-spacing: -0.1px;
-  cursor: pointer; transition: all 0.2s;
-}
-.pro-card-cta:hover { opacity: 0.88; transform: translateY(-1px); box-shadow: 0 8px 24px rgba(42,132,240,0.4); }
-.pro-cta-price-tag { font-size: 12px; opacity: 0.65; }
-
-/* ═══════════════════════════════════════════════════════
-   FAQ / PRIVACY ACCORDION
-═══════════════════════════════════════════════════════ */
-.privacy-section { background: var(--bg-2); }
-
-.privacy-tabs {
-  display: flex; gap: 4px;
-  background: var(--surface);
-  padding: 4px;
-  border-radius: 12px;
-  border: 0.5px solid var(--border);
-  width: fit-content;
-  margin-bottom: 40px;
-}
-
-.priv-tab-btn {
-  padding: 8px 20px; border-radius: 9px;
-  font-size: 13px; font-weight: 500;
-  background: none; border: none;
-  color: var(--sub); cursor: pointer;
-  font-family: 'Outfit', sans-serif;
-  transition: all 0.2s;
-}
-.priv-tab-btn.active { background: var(--surface-2); color: var(--text); }
-
-.privacy-panel { display: none; }
-.privacy-panel.active { display: block; }
-
-.privacy-doc {
-  background: var(--surface);
-  border: 0.5px solid var(--border);
-  border-radius: var(--r-card);
-  overflow: hidden;
-  max-height: 520px;
-  overflow-y: auto;
-}
-
-.privacy-doc::-webkit-scrollbar { width: 4px; }
-.privacy-doc::-webkit-scrollbar-track { background: transparent; }
-.privacy-doc::-webkit-scrollbar-thumb { background: var(--border-2); border-radius: 4px; }
-
-.privacy-content {
-  padding: 36px;
-  font-size: 14px; line-height: 1.75; color: var(--sub);
-}
-.privacy-content h1 { font-family: 'Cormorant', serif; font-size: 28px; font-weight: 600; color: var(--text); letter-spacing: -0.5px; margin-bottom: 6px; }
-.privacy-content .priv-date { font-size: 12px; margin-bottom: 28px; display: block; }
-.privacy-content h2 { font-size: 15px; font-weight: 600; color: var(--text); margin: 24px 0 10px; }
-.privacy-content p { margin-bottom: 12px; }
-.privacy-content ul { padding-left: 20px; margin-bottom: 12px; display: flex; flex-direction: column; gap: 4px; }
-.privacy-content a { color: var(--blue); }
-
-/* ═══════════════════════════════════════════════════════
-   CTA STRIP
-═══════════════════════════════════════════════════════ */
-.cta-strip {
-  padding: 100px 24px;
-  background: radial-gradient(ellipse at 50% 0%, rgba(41,151,255,0.08) 0%, transparent 60%), var(--bg);
-  text-align: center;
-  border-top: 0.5px solid var(--border);
-}
-
-.cta-strip .section-title { margin: 0 auto 16px; }
-.cta-strip .section-sub   { margin: 0 auto 48px; text-align: center; }
-
-.chrome-badge {
-  display: inline-flex; align-items: center; gap: 10px;
-  background: rgba(255,255,255,0.05);
-  border: 0.5px solid var(--border);
-  border-radius: 14px;
-  padding: 10px 18px;
-  font-size: 13px; color: var(--sub);
-  margin-bottom: 20px;
-}
-
-/* ═══════════════════════════════════════════════════════
+/* ════════════════════════════════
    FOOTER
-═══════════════════════════════════════════════════════ */
-footer {
-  padding: 48px 24px;
-  border-top: 0.5px solid var(--border);
-  background: var(--bg);
-}
+════════════════════════════════ */
+footer{padding:52px 28px;border-top:0.5px solid var(--border)}
+.ft{max-width:1080px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:24px}
+.ft-brand{font-family:'Cormorant',serif;font-size:18px;font-weight:600;color:var(--text);display:flex;align-items:center;gap:8px}
+.ft-links{display:flex;gap:24px}
+.ft-links a{font-size:13px;color:var(--sub2);text-decoration:none;transition:color .2s}
+.ft-links a:hover{color:var(--sub)}
+.ft-copy{font-size:12px;color:var(--sub2)}
 
-.footer-inner {
-  max-width: 1100px; margin: 0 auto;
-  display: flex; align-items: center; justify-content: space-between;
-  flex-wrap: wrap; gap: 20px;
-}
-
-.footer-brand {
-  display: flex; align-items: center; gap: 10px;
-  font-family: 'Cormorant', serif;
-  font-size: 18px; font-weight: 600;
-}
-
-.footer-links { display: flex; gap: 24px; }
-.footer-links a { font-size: 13px; color: var(--sub-2); transition: color 0.2s; }
-.footer-links a:hover { color: var(--sub); }
-
-.footer-copy { font-size: 12px; color: var(--sub-2); }
-
-/* ═══════════════════════════════════════════════════════
+/* ════════════════════════════════
    MOBILE
-═══════════════════════════════════════════════════════ */
-@media (max-width: 768px) {
-  .nav-links { display: none; }
-  .problem-grid { grid-template-columns: 1fr; }
-  .problem-visual { display: none; }
-  .features-grid { grid-template-columns: 1fr; }
-  .feat-card.large { grid-column: span 1; flex-direction: column; }
-  .pro-section-inner { grid-template-columns: 1fr; }
-  .stats-inner { grid-template-columns: 1fr; gap: 32px; }
-  .stat-item { border-right: none; border-bottom: 0.5px solid var(--border); padding-bottom: 32px; }
-  .stat-item:last-child { border-bottom: none; }
-  .footer-inner { flex-direction: column; gap: 28px; }
+════════════════════════════════ */
+@media(max-width:900px){
+  .nav-links{display:none}
+  .problem-g{grid-template-columns:1fr}.bubble-vis{display:none}
+  .feat-grid{grid-template-columns:1fr}.fc-hero{flex-direction:column;gap:24px}
+  .pro-g{grid-template-columns:1fr}
+  .reviews-g{grid-template-columns:1fr}
+  .stats-g{grid-template-columns:1fr;gap:0}
+  .stat{border-right:none;border-bottom:0.5px solid var(--border);padding:24px 0}
+  .stat:last-child{border-bottom:none}
+  .ft{flex-direction:column;text-align:center}
+  .hero-h1,.hero-h2{letter-spacing:-2px}
 }
 </style>
 </head>
 <body>
 
-<!-- ═══════ NAV ═══════ -->
-<nav>
-  <div class="nav-inner">
-    <a href="#" class="nav-brand">
-      <svg class="nuance-logo" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <rect width="36" height="36" rx="9" fill="url(#logo-bg)"/>
-        <circle cx="14.5" cy="18" r="8.5" fill="url(#logo-c1)" opacity="0.9"/>
-        <circle cx="21.5" cy="18" r="8.5" fill="url(#logo-c2)" opacity="0.55"/>
+<!-- ═══ NAV ═══ -->
+<nav id="nav">
+  <div class="nav-in">
+    <a href="#" class="logo">
+      <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+        <rect width="28" height="28" rx="7" fill="url(#n-bg)"/>
+        <circle cx="11" cy="14" r="6.5" fill="url(#n-c1)" opacity=".88"/>
+        <circle cx="17" cy="14" r="6.5" fill="url(#n-c2)" opacity=".55"/>
         <defs>
-          <linearGradient id="logo-bg" x1="0" y1="0" x2="36" y2="36" gradientUnits="userSpaceOnUse">
-            <stop stop-color="#1a2a3a"/>
-            <stop offset="1" stop-color="#0d1520"/>
+          <linearGradient id="n-bg" x1="0" y1="0" x2="28" y2="28" gradientUnits="userSpaceOnUse">
+            <stop stop-color="#1a2a3a"/><stop offset="1" stop-color="#0d1520"/>
           </linearGradient>
-          <linearGradient id="logo-c1" x1="6" y1="10" x2="23" y2="26" gradientUnits="userSpaceOnUse">
-            <stop stop-color="#3d5060"/>
-            <stop offset="1" stop-color="#2a3a48"/>
+          <linearGradient id="n-c1" x1="4" y1="8" x2="18" y2="20" gradientUnits="userSpaceOnUse">
+            <stop stop-color="#3d5060"/><stop offset="1" stop-color="#2a3a48"/>
           </linearGradient>
-          <linearGradient id="logo-c2" x1="13" y1="10" x2="30" y2="26" gradientUnits="userSpaceOnUse">
-            <stop stop-color="#7dd5e0" stop-opacity="0.7"/>
-            <stop offset="1" stop-color="#2997ff" stop-opacity="0.5"/>
+          <linearGradient id="n-c2" x1="10" y1="8" x2="24" y2="20" gradientUnits="userSpaceOnUse">
+            <stop stop-color="#7dd5e0" stop-opacity=".75"/><stop offset="1" stop-color="#2997ff" stop-opacity=".5"/>
           </linearGradient>
         </defs>
       </svg>
       Nuance
     </a>
-
     <ul class="nav-links">
       <li><a href="#features">Features</a></li>
       <li><a href="#how">How it works</a></li>
       <li><a href="#pro">Pro</a></li>
+      <li><a href="#faq">FAQ</a></li>
       <li><a href="#privacy">Privacy</a></li>
     </ul>
-
-    <a href="https://chrome.google.com/webstore" target="_blank" class="nav-cta">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm0 4a8 8 0 110 16A8 8 0 0112 4zm0 2a6 6 0 100 12A6 6 0 0012 6z"/></svg>
-      Add to Chrome
-    </a>
+    <a href="https://chrome.google.com/webstore" target="_blank" class="nav-btn">Add to Chrome</a>
   </div>
 </nav>
 
-<!-- ═══════ HERO ═══════ -->
-<section class="hero">
-  <div class="orb orb-1"></div>
-  <div class="orb orb-2"></div>
-  <div class="orb orb-3"></div>
+<!-- ═══ HERO ═══ -->
+<section class="hero" id="hero">
+  <div class="orb o1" id="o1"></div>
+  <div class="orb o2" id="o2"></div>
+  <div class="orb o3"></div>
 
-  <div class="hero-eyebrow">
-    <span>✦</span> AI-powered critical thinking
-  </div>
-
-  <h1 class="hero-title">Think <em>beyond</em></h1>
-  <h2 class="hero-title-2">the headline.</h2>
-
-  <p class="hero-sub">
-    Nuance uses Llama&nbsp;3 AI to burst your filter bubble — delivering instant counter-arguments, bias scores, and fact-checks on any news article, right in your browser.
+  <div class="hero-eye" id="he">✦&nbsp; AI-Powered Critical Thinking</div>
+  <h1 class="hero-h1" id="hh1">Think <em>beyond</em></h1>
+  <h2 class="hero-h2" id="hh2">the headline.</h2>
+  <p class="hero-sub" id="hs">
+    Nuance uses Llama&nbsp;3 AI to burst your filter bubble — delivering instant counter-arguments, bias scores, and fact-checks on any news article, live in your browser.
   </p>
-
-  <div class="hero-actions">
-    <a href="https://chrome.google.com/webstore" target="_blank" class="btn-primary">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14H9V8h2v8zm4 0h-2V8h2v8z"/></svg>
-      Add to Chrome — Free
-    </a>
-    <a href="#features" class="btn-ghost">
-      See features →
-    </a>
+  <div class="hero-btns" id="hb">
+    <a href="https://chrome.google.com/webstore" target="_blank" class="btn-blue">Add to Chrome — Free</a>
+    <a href="#features" class="btn-ghost">See what it does →</a>
   </div>
 
-  <div class="hero-preview">
-    <div class="preview-card">
-      <div class="pc-header">
-        <div class="pc-mac">
-          <div class="pc-dot pc-dot-r"></div>
-          <div class="pc-dot pc-dot-y"></div>
-        </div>
-        <div class="pc-name">
-          <svg width="12" height="12" viewBox="0 0 36 36" fill="none">
-            <circle cx="14.5" cy="18" r="8.5" fill="#3d5060" opacity="0.9"/>
-            <circle cx="21.5" cy="18" r="8.5" fill="#7dd5e0" opacity="0.55"/>
-          </svg>
-          Nuance
-          <span class="pc-mode">Counter-Points</span>
+  <div class="hero-card" id="hc">
+    <div class="ext-card">
+      <div class="ec-hd">
+        <div class="ec-mac"><div class="ec-dot ec-r"></div><div class="ec-dot ec-y"></div></div>
+        <div class="ec-brand">
+          <svg width="12" height="12" viewBox="0 0 28 28" fill="none"><circle cx="11" cy="14" r="6.5" fill="#3d5060" opacity=".9"/><circle cx="17" cy="14" r="6.5" fill="#7dd5e0" opacity=".5"/></svg>
+          Nuance <span class="ec-pill">Counter-Points</span>
         </div>
       </div>
-
-      <div class="pc-banner">
+      <div class="ec-cb">
         <span>⚠️</span>
-        <div>
-          <span class="pc-banner-label">Potentially Misleading Title</span>
-          <span class="pc-banner-text">Headline frames a contested policy as settled fact.</span>
-        </div>
+        <div><span class="ec-cb-l">Potentially Misleading Title</span><span class="ec-cb-s">Headline frames contested policy as settled fact.</span></div>
       </div>
-
-      <div class="pc-body">
-        <div class="pc-bias">
-          <div class="pc-bias-row">
-            <span>Bias Score</span>
-            <span class="pc-bias-score">High · 78%</span>
-          </div>
-          <div class="pc-bias-bar">
-            <div class="pc-bias-fill"></div>
-          </div>
-        </div>
-        <div class="pc-args">
-          <div class="pc-arg">
-            <div class="pc-num">1</div>
-            <div class="pc-text">Prior rulings established inconsistent standards across sporting federations.</div>
-          </div>
-          <div class="pc-arg">
-            <div class="pc-num">2</div>
-            <div class="pc-text">Several sports scientists contest the assumed performance advantage.</div>
-          </div>
-          <div class="pc-arg">
-            <div class="pc-num">3</div>
-            <div class="pc-text">Similar policies were challenged in court and partially overturned in 2023.</div>
-          </div>
-        </div>
+      <div class="ec-body">
+        <div class="ec-br"><span>Bias Score</span><span class="ec-brs">High · 78%</span></div>
+        <div class="ec-bb"><div class="ec-bf"></div></div>
+        <div class="ec-arg"><div class="ec-n">1</div><div class="ec-t">Prior rulings established inconsistent standards across sporting federations.</div></div>
+        <div class="ec-arg"><div class="ec-n">2</div><div class="ec-t">Several sports scientists dispute the assumed physiological advantage.</div></div>
+        <div class="ec-arg"><div class="ec-n">3</div><div class="ec-t">Similar policies were challenged in court and partially overturned in 2023.</div></div>
       </div>
-
-      <div class="pc-sources">
-        <div class="pc-sources-label">Sources</div>
-        <div class="pc-source"><div class="pc-source-dot"></div> Reuters</div>
-        <div class="pc-source"><div class="pc-source-dot"></div> The Guardian</div>
+      <div class="ec-src">
+        <div class="ec-sl">Sources</div>
+        <div class="ec-si"><div class="ec-sd"></div>Reuters</div>
+        <div class="ec-si"><div class="ec-sd"></div>The Guardian</div>
       </div>
     </div>
-    <div class="preview-glow"></div>
+    <div class="ec-glow"></div>
   </div>
 </section>
 
-<!-- ═══════ STATS ═══════ -->
-<div class="stats-bar">
-  <div class="stats-inner">
-    <div class="stat-item reveal">
-      <div class="stat-num"><span class="counter" data-target="98">0</span>%</div>
-      <div class="stat-label">Accuracy vs GPT-4 benchmarks</div>
-    </div>
-    <div class="stat-item reveal reveal-delay-2">
-      <div class="stat-num">&lt;<span class="counter" data-target="1">0</span>s</div>
-      <div class="stat-label">Average response time via Groq LPUs</div>
-    </div>
-    <div class="stat-item reveal reveal-delay-3">
-      <div class="stat-num"><span class="counter" data-target="7">0</span></div>
-      <div class="stat-label">Languages supported</div>
-    </div>
+<!-- ═══ STATS ═══ -->
+<div class="stats">
+  <div class="stats-g">
+    <div class="stat"><div class="stat-n gt"><span class="cnt" data-to="98">0</span>%</div><div class="stat-l">Accuracy vs GPT-4 benchmarks</div></div>
+    <div class="stat"><div class="stat-n gt">&lt;<span class="cnt" data-to="1">0</span>s</div><div class="stat-l">Average response via Groq LPUs</div></div>
+    <div class="stat"><div class="stat-n gt"><span class="cnt" data-to="7">0</span></div><div class="stat-l">Languages supported natively</div></div>
   </div>
 </div>
 
-<!-- ═══════ PROBLEM ═══════ -->
-<section class="problem-section" id="problem">
-  <div class="section-inner">
-    <div class="problem-grid">
-      <div class="problem-text">
-        <span class="section-eyebrow reveal">The problem</span>
-        <h2 class="section-title reveal">You live inside<br><strong>a bubble.</strong></h2>
-        <p class="section-sub reveal">Algorithms amplify content that confirms what you already believe. Nuance gives you the other side — every time, automatically, without leaving the page you're reading.</p>
-        <ul class="problem-points">
-          <li class="pp-item reveal reveal-delay-1">
-            <div class="pp-icon">📰</div>
-            <div>
-              <div class="pp-title">Selective reporting</div>
-              <div class="pp-desc">News sources curate facts to fit a narrative. You see a partial picture.</div>
-            </div>
-          </li>
-          <li class="pp-item reveal reveal-delay-2">
-            <div class="pp-icon">🔁</div>
-            <div>
-              <div class="pp-title">Confirmation loops</div>
-              <div class="pp-desc">Social feeds show you more of what you engage with. The loop deepens.</div>
-            </div>
-          </li>
-          <li class="pp-item reveal reveal-delay-3">
-            <div class="pp-icon">⏱️</div>
-            <div>
-              <div class="pp-title">No time to research</div>
-              <div class="pp-desc">Cross-checking takes time most of us don't have. Until now.</div>
-            </div>
-          </li>
-        </ul>
-      </div>
-      <div class="problem-visual reveal">
-        <div class="bubble-wrap">
-          <div class="bubble b1">Only left-leaning sources</div>
-          <div class="bubble b2">Algorithm echo chamber</div>
-          <div class="bubble b3">Selective facts</div>
-          <div class="b-pop"></div>
-        </div>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- ═══════ FEATURES ═══════ -->
-<section id="features" class="features-section">
-  <div class="section-inner">
-    <span class="section-eyebrow reveal">What Nuance does</span>
-    <h2 class="section-title reveal">Every article,<br><strong>critically examined.</strong></h2>
-
-    <div class="features-grid">
-
-      <div class="feat-card large reveal">
-        <div class="feat-content">
-          <div class="feat-icon">📊</div>
-          <div class="feat-title">Bias Score Meter</div>
-          <div class="feat-desc">Every article gets scored 0–100. Green means balanced. Red means propaganda. Shown live in the Chrome toolbar badge — before you even open the Nuance panel.</div>
-        </div>
-        <div class="feat-visual">
-          <div class="bias-demo">
-            <div class="bd-row bd-row-1"><span class="bd-label" style="font-size:10px;color:var(--sub);">Partisan outlet</span><div class="bd-bar-bg"><div class="bd-bar"></div></div><span class="bd-val">78%</span></div>
-            <div class="bd-row bd-row-2"><span class="bd-label" style="font-size:10px;color:var(--sub);">Major tabloid</span><div class="bd-bar-bg"><div class="bd-bar"></div></div><span class="bd-val">45%</span></div>
-            <div class="bd-row bd-row-3"><span class="bd-label" style="font-size:10px;color:var(--sub);">Reuters wire</span><div class="bd-bar-bg"><div class="bd-bar"></div></div><span class="bd-val">18%</span></div>
-          </div>
-        </div>
-      </div>
-
-      <div class="feat-card reveal reveal-delay-1">
-        <div class="feat-icon">🧠</div>
-        <div class="feat-title">3 Counter-Arguments</div>
-        <div class="feat-desc">Llama 3 generates three short, logical counter-points to the article's main thesis. Factual. Sourced. Immediate.</div>
-      </div>
-
-      <div class="feat-card reveal reveal-delay-1">
-        <div class="feat-icon">⚠️</div>
-        <div class="feat-title">Clickbait Detector</div>
-        <div class="feat-desc">A fast pre-scan checks whether the headline actually matches the article content. An amber warning appears before you even finish reading.</div>
-      </div>
-
-      <div class="feat-card reveal reveal-delay-2">
-        <div class="feat-icon">🔍</div>
-        <div class="feat-title">3 Focus Lenses</div>
-        <div class="feat-desc">Switch between Counter-Points, Logical Fallacies, and Fact-Check mode. Same article, different critical angles.</div>
-      </div>
-
-      <div class="feat-card reveal reveal-delay-2">
-        <div class="feat-icon">🔗</div>
-        <div class="feat-title">Credible Sources</div>
-        <div class="feat-desc">Every analysis links to 2–3 verified, reputable publications covering the same topic — so you can read further.</div>
-      </div>
-
-      <div class="feat-card reveal reveal-delay-3">
-        <div class="feat-icon">🌙</div>
-        <div class="feat-title">Seamless Design</div>
-        <div class="feat-desc">Glassmorphic floating panel. Light/dark/auto theme. Draggable. Minimizable. Shadow DOM isolation — it looks perfect on every site.</div>
-      </div>
-
-      <div class="feat-card reveal reveal-delay-3">
-        <div class="feat-icon">🌐</div>
-        <div class="feat-title">7 Languages</div>
-        <div class="feat-desc">Analyses are delivered in the article's own language, or your language of choice. Auto-detected or manually set.</div>
-      </div>
-
-    </div>
-  </div>
-</section>
-
-<!-- ═══════ HOW IT WORKS ═══════ -->
-<section id="how">
-  <div class="section-inner" style="max-width:720px;">
-    <span class="section-eyebrow reveal">How it works</span>
-    <h2 class="section-title reveal">Set it up in <strong>60 seconds.</strong></h2>
-    <p class="section-sub reveal">No login required for the free plan. No configuration. Just install and browse.</p>
-
-    <div class="steps">
-      <div class="step reveal">
-        <div class="step-num">1</div>
-        <div class="step-body">
-          <div class="step-title">Install the extension</div>
-          <div class="step-desc">Add Nuance to Chrome in one click. No account needed to get started with the free plan (5 analyses per day).</div>
-        </div>
-      </div>
-      <div class="step reveal reveal-delay-1">
-        <div class="step-num">2</div>
-        <div class="step-body">
-          <div class="step-title">Open any news article</div>
-          <div class="step-desc">Nuance detects when you're reading a substantial article (500+ characters) and wakes up automatically. No button to press.</div>
-        </div>
-      </div>
-      <div class="step reveal reveal-delay-2">
-        <div class="step-num">3</div>
-        <div class="step-body">
-          <div class="step-title">The AI analyses it in under a second</div>
-          <div class="step-desc">Groq's LPU hardware runs Llama 3.3 70B at superhuman speed. A bias score, clickbait warning, and 3 counter-arguments appear in the floating panel.</div>
-        </div>
-      </div>
-      <div class="step reveal reveal-delay-3">
-        <div class="step-num">4</div>
-        <div class="step-body">
-          <div class="step-title">Read critically. Share the insight.</div>
-          <div class="step-desc">Switch focus lenses, browse the suggested sources, or export a beautiful social-ready PNG image with the analysis summary.</div>
-        </div>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- ═══════ PRO ═══════ -->
-<section id="pro" class="pro-section">
-  <div class="pro-section-inner section-inner">
-
-    <div class="pro-copy">
-      <span class="section-eyebrow reveal">Nuance Pro</span>
-      <h2 class="section-title reveal">Unlimited<br><strong>critical thinking.</strong></h2>
-      <p class="section-sub reveal">The free plan gives you a taste. Pro removes every limit and unlocks the most powerful features.</p>
-
-      <ul class="pro-feat-list">
-        <li class="pro-feat-item reveal reveal-delay-1">
-          <div class="pfi-check">✓</div>
-          <div>
-            <div class="pfi-text-title">Unlimited daily analyses</div>
-            <div class="pfi-text-sub">Free plan is limited to 5 per day</div>
-          </div>
+<!-- ═══ PROBLEM ═══ -->
+<section class="problem" id="problem">
+  <div class="problem-g">
+    <div>
+      <span class="eyebrow">The problem</span>
+      <h2 class="stitle">You live inside<br><strong>a bubble.</strong></h2>
+      <p class="ssub">Algorithms amplify what confirms your beliefs. News sources curate facts to fit a narrative. You see a partial picture — and you don't know it.</p>
+      <ul class="prob-pts">
+        <li class="pp">
+          <div class="pp-ico">📰</div>
+          <div><div class="pp-h">Selective reporting</div><div class="pp-d">News sources emphasise facts that fit their editorial angle. The rest gets buried.</div></div>
         </li>
-        <li class="pro-feat-item reveal reveal-delay-2">
-          <div class="pfi-lock">✦</div>
-          <div>
-            <div class="pfi-text-title">Deep Fact-Check Mode</div>
-            <div class="pfi-text-sub">Verify specific claims as Confirmed, Disputed, or Unverified</div>
-          </div>
+        <li class="pp">
+          <div class="pp-ico">🔁</div>
+          <div><div class="pp-h">Algorithmic echo chambers</div><div class="pp-d">Social feeds show you more of what you already engage with. The loop deepens daily.</div></div>
         </li>
-        <li class="pro-feat-item reveal reveal-delay-2">
-          <div class="pfi-lock">✦</div>
-          <div>
-            <div class="pfi-text-title">Social Image Export</div>
-            <div class="pfi-text-sub">Generate a 1080×1080 PNG ready for Instagram or Twitter</div>
-          </div>
-        </li>
-        <li class="pro-feat-item reveal reveal-delay-3">
-          <div class="pfi-lock">✦</div>
-          <div>
-            <div class="pfi-text-title">Analysis History</div>
-            <div class="pfi-text-sub">Full reading history with bias scores and clickbait flags</div>
-          </div>
-        </li>
-        <li class="pro-feat-item reveal reveal-delay-3">
-          <div class="pfi-lock">✦</div>
-          <div>
-            <div class="pfi-text-title">Multi-Source Verification</div>
-            <div class="pfi-text-sub">Cross-referenced with 2–3 credible publications per analysis</div>
-          </div>
+        <li class="pp">
+          <div class="pp-ico">⏱️</div>
+          <div><div class="pp-h">No time to cross-check</div><div class="pp-d">Verifying a story takes 20 minutes you don't have. Nuance does it in under a second.</div></div>
         </li>
       </ul>
     </div>
+    <div class="bubble-vis">
+      <div class="bub-wrap">
+        <div class="bub b1">Only left-leaning sources</div>
+        <div class="bub b2">Algorithm echo chamber</div>
+        <div class="bub b3">Selective facts</div>
+        <div class="bub-pop"></div>
+      </div>
+    </div>
+  </div>
+</section>
 
-    <div class="pro-card-wrap reveal">
-      <div class="pro-card-glow"></div>
-      <div class="pro-card">
-        <div class="pro-card-badge">✦ Pro Plan</div>
-        <div class="pro-card-title">Nuance<br>Pro</div>
-        <div class="pro-card-sub">One subscription. Every feature. Across all your devices.</div>
+<!-- ═══ FEATURES ═══ -->
+<section id="features" class="features">
+  <div class="inner">
+    <span class="eyebrow">What Nuance does</span>
+    <h2 class="stitle">Every article,<br><strong>critically examined.</strong></h2>
 
-        <div class="pro-card-price">
-          <span class="pro-price-dec">€</span>
-          <span class="pro-price-num">4</span>
-          <span class="pro-price-dec">.99</span>
-          <span class="pro-price-period">/ month</span>
+    <div class="feat-grid">
+
+      <!-- Full-width hero card: Bias Score with live demo -->
+      <div class="fc-hero">
+        <div class="fc-hero-body">
+          <div class="fc-ico">📊</div>
+          <div class="fc-h" style="font-size:20px;margin-bottom:10px">Bias Score — live in the browser badge</div>
+          <div class="fc-d" style="font-size:15px;max-width:520px">Every article scores 0–100. The number appears instantly in the Chrome toolbar badge before you even open Nuance. Red means proceed with caution. Green means balanced reporting.</div>
         </div>
+        <div class="bias-demo" style="width:220px;flex-shrink:0">
+          <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:var(--sub);margin-bottom:16px">Live examples</div>
+          <div class="bd-r bdr1"><span class="bd-l">Partisan outlet</span><div class="bd-bg"><div class="bd-f"></div></div><span class="bd-v">78%</span></div>
+          <div class="bd-r bdr2"><span class="bd-l">Major tabloid</span><div class="bd-bg"><div class="bd-f"></div></div><span class="bd-v">46%</span></div>
+          <div class="bd-r bdr3"><span class="bd-l">Reuters wire</span><div class="bd-bg"><div class="bd-f"></div></div><span class="bd-v">19%</span></div>
+        </div>
+      </div>
 
-        <ul class="pro-card-feats">
-          <li class="pcf-item"><span class="pcf-check">✓</span> Unlimited analyses</li>
-          <li class="pcf-item"><span class="pcf-check">✓</span> All 3 focus lenses</li>
-          <li class="pcf-item"><span class="pcf-check">✓</span> Fact-check mode</li>
-          <li class="pcf-item"><span class="pcf-check">✓</span> Social PNG export</li>
-          <li class="pcf-item"><span class="pcf-check">✓</span> Full reading history</li>
-          <li class="pcf-item"><span class="pcf-check">✓</span> Priority support</li>
+      <!-- 3 × 3 regular cards -->
+      <div class="fc">
+        <div class="fc-ico">⚠️</div>
+        <div class="fc-h">Clickbait Detector</div>
+        <div class="fc-d">A parallel fast check compares the headline to the body. An amber warning appears in seconds — before the main analysis even loads.</div>
+      </div>
+
+      <div class="fc">
+        <div class="fc-ico">🧠</div>
+        <div class="fc-h">3 Counter-Arguments</div>
+        <div class="fc-d">Logical, factual counter-positions that challenge the article's main thesis — perspectives you wouldn't otherwise encounter.</div>
+      </div>
+
+      <div class="fc">
+        <div class="fc-ico">🔗</div>
+        <div class="fc-h">Credible Source Links</div>
+        <div class="fc-d">Every analysis links to 2–3 verified, well-known publications covering the same topic so you can read further.</div>
+      </div>
+
+      <div class="fc">
+        <div class="fc-ico">🧩</div>
+        <div class="fc-h">Logical Fallacy Detection <span style="font-size:10px;color:#f5c842;background:rgba(245,200,66,.1);border:0.5px solid rgba(245,200,66,.2);padding:2px 7px;border-radius:10px;vertical-align:middle;margin-left:4px">PRO</span></div>
+        <div class="fc-d">Name and expose rhetorical manipulation. Appeal to authority? False dichotomy? Nuance identifies and explains each one.</div>
+      </div>
+
+      <div class="fc">
+        <div class="fc-ico">🔍</div>
+        <div class="fc-h">Deep Fact-Check <span style="font-size:10px;color:#f5c842;background:rgba(245,200,66,.1);border:0.5px solid rgba(245,200,66,.2);padding:2px 7px;border-radius:10px;vertical-align:middle;margin-left:4px">PRO</span></div>
+        <div class="fc-d">Verifiable claims are labelled ✅ Confirmed, ⚠️ Disputed, or ❌ Unverified. Know what's real before you share.</div>
+      </div>
+
+      <div class="fc">
+        <div class="fc-ico">📤</div>
+        <div class="fc-h">Social Share PNG <span style="font-size:10px;color:#f5c842;background:rgba(245,200,66,.1);border:0.5px solid rgba(245,200,66,.2);padding:2px 7px;border-radius:10px;vertical-align:middle;margin-left:4px">PRO</span></div>
+        <div class="fc-d">Export the analysis as a 1080×1080 image — dark gradient, bias score, counter-points — ready for Instagram or X.</div>
+      </div>
+
+      <div class="fc">
+        <div class="fc-ico">🌐</div>
+        <div class="fc-h">7 Languages</div>
+        <div class="fc-d">Auto-detects the article's language and responds in it. Or choose manually: EN, PT, ES, FR, DE, IT, NL.</div>
+      </div>
+
+      <div class="fc">
+        <div class="fc-ico">📖</div>
+        <div class="fc-h">Reading History</div>
+        <div class="fc-d">Every article you analyse is saved with its bias score and clickbait flag. Browse, revisit, or delete entries individually.</div>
+      </div>
+
+      <div class="fc">
+        <div class="fc-ico">🌙</div>
+        <div class="fc-h">Seamless Design</div>
+        <div class="fc-d">Glassmorphic floating panel. Light/dark/auto theme. Draggable. Minimizable. Shadow DOM isolation so it looks perfect on every news site.</div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ═══ HOW IT WORKS ═══ -->
+<section id="how" class="how">
+  <div class="inner" style="max-width:760px">
+    <span class="eyebrow">How it works</span>
+    <h2 class="stitle">Set up in <strong>60 seconds.</strong></h2>
+    <p class="ssub">No configuration. No account required for the free plan. Install and browse.</p>
+
+    <div class="timeline">
+      <div id="timeline-line" style="position:absolute;left:28px;top:56px;bottom:56px;width:1px;background:linear-gradient(to bottom,transparent,rgba(41,151,255,.35) 20%,rgba(167,139,250,.35) 80%,transparent);transform-origin:top;"></div><div id="timeline-line"></div>
+      <div class="step">
+        <div class="step-n">1</div>
+        <div class="step-b">
+          <div class="step-h">Install the extension</div>
+          <div class="step-d">One click from the Chrome Web Store. No login, no setup. The free plan starts immediately with 5 analyses per day.</div>
+          <span class="step-tag">🕐 Takes about 10 seconds</span>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-n">2</div>
+        <div class="step-b">
+          <div class="step-h">Open any news article</div>
+          <div class="step-d">Nuance detects article pages automatically — it wakes up when you're reading something substantial (500+ characters). No button to press, no extension to click.</div>
+          <span class="step-tag">⚡ Fully automatic detection</span>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-n">3</div>
+        <div class="step-b">
+          <div class="step-h">AI analyses in under 1 second</div>
+          <div class="step-d">Groq's LPU hardware runs Llama 3.3 70B at superhuman speed. A bias score, clickbait check, and 3 counter-arguments appear almost instantly in a floating panel — and the bias number shows in your toolbar badge.</div>
+          <span class="step-tag">🚀 Powered by Groq LPUs</span>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-n">4</div>
+        <div class="step-b">
+          <div class="step-h">Switch lenses. Share the insight.</div>
+          <div class="step-d">Change focus mode to Logical Fallacies or Deep Fact-Check (Pro). Browse the credible source links. Or export a beautiful 1080×1080 image to share on social media.</div>
+          <span class="step-tag">📤 Share as PNG with Pro</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ PRO ═══ -->
+<section id="pro" class="pro-sec">
+  <div class="pro-g">
+    <div>
+      <span class="eyebrow">Nuance Pro</span>
+      <h2 class="stitle">Unlimited<br><strong>critical thinking.</strong></h2>
+      <p class="ssub">The free plan gives you a taste. Pro removes every limit and unlocks the most powerful features.</p>
+      <ul class="pro-feats">
+        <li class="pfi"><div class="pfi-dot f">✓</div><div><div class="pfi-h">5 free analyses per day</div><div class="pfi-d">Resets at midnight · No credit card needed</div></div></li>
+        <li class="pfi"><div class="pfi-dot p">✦</div><div><div class="pfi-h">Unlimited daily analyses</div><div class="pfi-d">No cap, no throttling, always-on</div></div></li>
+        <li class="pfi"><div class="pfi-dot p">✦</div><div><div class="pfi-h">Logical Fallacy Detection</div><div class="pfi-d">Name and expose rhetorical manipulation in any article</div></div></li>
+        <li class="pfi"><div class="pfi-dot p">✦</div><div><div class="pfi-h">Deep Fact-Check Mode</div><div class="pfi-d">Claims labelled Verified, Disputed, or Unverified</div></div></li>
+        <li class="pfi"><div class="pfi-dot p">✦</div><div><div class="pfi-h">Social Image Export</div><div class="pfi-d">1080×1080 PNG ready for Instagram and X</div></div></li>
+        <li class="pfi"><div class="pfi-dot p">✦</div><div><div class="pfi-h">Unlimited reading history</div><div class="pfi-d">Free plan stores your last 10 articles</div></div></li>
+      </ul>
+    </div>
+    <div class="pro-card-w">
+      <div class="pro-halo"></div>
+      <div class="pro-card">
+        <div class="pc-badge">✦ Pro Plan</div>
+        <div class="pc-title">Nuance<br>Pro</div>
+        <div class="pc-sub">Every feature. No limits.</div>
+        <div class="pc-price">
+          <span class="pc-sym">€</span><span class="pc-num">3</span><span class="pc-dec">.99</span><span class="pc-mo">/ month</span>
+        </div>
+        <ul class="pc-feats">
+          <li class="pc-fi"><span class="pc-ck">✓</span> Unlimited analyses</li>
+          <li class="pc-fi"><span class="pc-ck">✓</span> All 3 focus lenses</li>
+          <li class="pc-fi"><span class="pc-ck">✓</span> Logical Fallacy mode</li>
+          <li class="pc-fi"><span class="pc-ck">✓</span> Deep Fact-Check mode</li>
+          <li class="pc-fi"><span class="pc-ck">✓</span> Social PNG export</li>
+          <li class="pc-fi"><span class="pc-ck">✓</span> Unlimited reading history</li>
+          <li class="pc-fi"><span class="pc-ck">✓</span> Cancel anytime</li>
         </ul>
-
-        <button class="pro-card-cta" onclick="window.open('https://chrome.google.com/webstore','_blank')">
+        <button class="pc-cta" onclick="window.open('https://chrome.google.com/webstore','_blank')">
           <span>Get Nuance Pro</span>
-          <span class="pro-cta-price-tag">Cancel anytime</span>
+          <span class="pc-cta-s">No contracts · Cancel anytime</span>
         </button>
       </div>
     </div>
-
   </div>
 </section>
 
-<!-- ═══════ PRIVACY ═══════ -->
-<section id="privacy" class="privacy-section">
-  <div class="section-inner">
-    <span class="section-eyebrow reveal">Transparency</span>
-    <h2 class="section-title reveal">Privacy <strong>first.</strong></h2>
-    <p class="section-sub reveal" style="margin-bottom:36px;">We believe in radical transparency. Read exactly what data we collect, how we use it, and your rights.</p>
+<!-- ═══ SOCIAL PROOF ═══ -->
+<section class="social" id="reviews">
+  <div class="inner">
+    <span class="eyebrow">What readers say</span>
+    <h2 class="stitle">Trusted by <strong>critical thinkers.</strong></h2>
+    <div class="reviews-g">
+      <div class="review">
+        <div class="rv-stars">★★★★★</div>
+        <div class="rv-text">"I've changed how I read news entirely. The bias score alone made me realise I was only reading one side of every story. Essential tool."</div>
+        <div class="rv-author">— João M., Journalist · Lisbon</div>
+      </div>
+      <div class="review">
+        <div class="rv-stars">★★★★★</div>
+        <div class="rv-text">"The clickbait detection is scary accurate. It caught three misleading headlines in one morning session. I share the PNG summaries on Twitter constantly."</div>
+        <div class="rv-author">— Ana P., Media Researcher · Porto</div>
+      </div>
+      <div class="review">
+        <div class="rv-stars">★★★★★</div>
+        <div class="rv-text">"Finally a tool that makes me feel like I'm reading news critically rather than just absorbing it. The Fallacy mode is incredible for spotting manipulation."</div>
+        <div class="rv-author">— Marco R., University Lecturer · Madrid</div>
+      </div>
+    </div>
+  </div>
+</section>
 
-    <div class="privacy-tabs reveal">
-      <button class="priv-tab-btn active" data-tab="extension">Extension Privacy Policy</button>
-      <button class="priv-tab-btn" data-tab="pro">Pro Subscription Policy</button>
+<!-- ═══ FAQ ═══ -->
+<section id="faq" class="faq">
+  <div class="inner" style="max-width:720px">
+    <span class="eyebrow">FAQ</span>
+    <h2 class="stitle">Common <strong>questions.</strong></h2>
+    <div class="faq-list">
+      <div class="faq-item">
+        <button class="faq-q">Is Nuance really free?<span class="faq-icon">+</span></button>
+        <div class="faq-a">Yes — the free plan gives you 5 article analyses per day, counter-arguments, bias scores, clickbait detection, and credible source links. No credit card required. Pro unlocks unlimited analyses and additional features for €3.99/month.</div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q">Does Nuance store my reading history?<span class="faq-icon">+</span></button>
+        <div class="faq-a">Your reading history is stored locally on your device only — never transmitted to any server. Free users keep their last 10 articles, Pro users keep 50. You can delete individual entries or clear everything from the popup at any time.</div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q">Which AI model powers Nuance?<span class="faq-icon">+</span></button>
+        <div class="faq-a">Nuance uses Meta's Llama 3.3 70B for the main analysis and Llama 3.1 8B Instant for the quick clickbait pre-check. Both run on Groq's LPU (Language Processing Unit) hardware, which is why responses arrive in under a second.</div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q">Does Nuance work on all news sites?<span class="faq-icon">+</span></button>
+        <div class="faq-a">Yes — Nuance activates on any page that contains a substantial article (500+ characters) with an identifiable article structure. It works on Portuguese sites like Público and Observador, and international sites like BBC, Reuters, Guardian, NYT, and more.</div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q">Can I cancel my Pro subscription?<span class="faq-icon">+</span></button>
+        <div class="faq-a">Yes, at any time. Click "Manage Subscription" in the extension popup. Cancellation takes effect at the end of your current billing period. There are no contracts or cancellation fees.</div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q">Is my API key safe? Where is it stored?<span class="faq-icon">+</span></button>
+        <div class="faq-a">The Groq API key is never stored in the extension. All AI requests go through our secure Vercel proxy server. The key lives exclusively in server-side environment variables — never in your browser or in any downloadable file.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ PRIVACY ═══ -->
+<section id="privacy" class="privacy">
+  <div class="inner">
+    <span class="eyebrow">Transparency</span>
+    <h2 class="stitle">Privacy <strong>first.</strong></h2>
+    <p class="ssub" style="margin-bottom:36px">We never sell data. We never track reading behaviour. Read exactly what we collect and why.</p>
+
+    <div class="priv-tabs">
+      <button class="ptab active" data-p="ext">Extension Policy</button>
+      <button class="ptab" data-p="pro">Pro Subscription</button>
     </div>
 
-    <div class="privacy-panel active" id="priv-extension">
-      <div class="privacy-doc">
-        <div class="privacy-content">
-          <h1>Nuance Extension — Privacy Policy</h1>
-          <span class="priv-date">Last updated: January 2025</span>
-
-          <h2>1. Overview</h2>
-          <p>Nuance ("the Extension") is a Chrome browser extension developed to provide AI-powered critical analysis of online news articles. This policy describes what data is collected, how it is processed, and your rights under applicable privacy law (including GDPR).</p>
-
-          <h2>2. Data We Collect</h2>
-          <p>The Extension collects the following data solely to provide its service:</p>
-          <ul>
-            <li><strong>Article text content:</strong> When an article page is detected, the visible text content of that page is extracted locally and sent to the Groq API for AI analysis. This text is not stored by us after the API response is returned.</li>
-            <li><strong>Article URL and hostname:</strong> Used to cache the bias score badge for that domain locally on your device. Not transmitted to any server.</li>
-            <li><strong>User preferences:</strong> Theme (light/dark/auto) and language selection are stored locally in <code>chrome.storage.local</code> on your device only.</li>
-            <li><strong>Usage counter:</strong> A daily analysis count for free-tier limiting, stored locally on your device only.</li>
-            <li><strong>Analysis history:</strong> Article titles, URLs, bias scores, and dates — stored locally on your device only. You can delete it at any time from the extension popup.</li>
-          </ul>
-
-          <h2>3. Data We Do NOT Collect</h2>
-          <ul>
-            <li>We do not collect your browsing history beyond the current article session.</li>
-            <li>We do not collect personal identifiers (name, email, IP address) from free-tier users.</li>
-            <li>We do not sell, share, or monetise any data.</li>
-            <li>We do not use cookies or tracking pixels.</li>
-            <li>We do not run analytics on your reading behaviour.</li>
-          </ul>
-
-          <h2>4. Third-Party Services</h2>
-          <p><strong>Groq Cloud API:</strong> Article text (up to 3000 characters) is sent to Groq's API to generate the AI analysis. Groq's data processing is governed by their own <a href="https://groq.com/privacy-policy/" target="_blank">Privacy Policy</a>. We use Groq solely for inference; no data is retained by them for training without consent.</p>
-          <p><strong>ExtensionPay:</strong> Pro subscription payments are processed by ExtensionPay. They collect your email address and payment information. See their <a href="https://extensionpay.com/privacy" target="_blank">Privacy Policy</a>.</p>
-          <p><strong>Google Favicon API:</strong> Source domain favicons are loaded from <code>google.com/s2/favicons</code>. This is a public API; no personal data is transmitted.</p>
-
-          <h2>5. Data Retention</h2>
-          <p>All locally stored data (preferences, history, usage counts) remains on your device and is cleared when you uninstall the extension. Article text sent to the Groq API is processed transiently and not retained by us.</p>
-
-          <h2>6. Your Rights</h2>
-          <p>Under GDPR (if applicable), you have the right to access, correct, or delete any personal data we hold. For free-tier users, all data is local to your device — you can clear it by uninstalling the extension or using the "Clear History" function in the popup. For Pro users, contact us to request account data deletion.</p>
-
-          <h2>7. Security</h2>
-          <p>The API key used to communicate with Groq is stored in a local <code>env.js</code> file and is not included in any public code repository. Communication with the Groq API is encrypted via HTTPS.</p>
-
-          <h2>8. Changes to this Policy</h2>
-          <p>We may update this policy. Significant changes will be announced through the extension update notes. Continued use after an update constitutes acceptance.</p>
-
-          <h2>9. Contact</h2>
-          <p>For privacy enquiries: <a href="mailto:privacy@nuance.app">privacy@nuance.app</a></p>
-        </div>
+    <div id="pp-ext" class="priv-doc">
+      <div class="priv-in">
+        <h1>Extension Privacy Policy</h1>
+        <span class="date">Last updated: January 2025</span>
+        <h2>1. What we collect</h2>
+        <p>Article text (up to 3,000 characters) is sent transiently to our proxy server, which forwards it to Groq's API for AI analysis. It is not stored by us after the response is returned.</p>
+        <p>User preferences (theme, language), usage counts, and reading history are stored locally on your device in <code>chrome.storage.local</code> only. They are never transmitted to any server.</p>
+        <h2>2. What we never do</h2>
+        <ul>
+          <li>We do not collect personal identifiers from free-tier users</li>
+          <li>We do not sell, share, or monetise any data</li>
+          <li>We do not use cookies, analytics, or tracking pixels</li>
+          <li>We do not store article content after API responses</li>
+          <li>We do not collect your browsing history</li>
+        </ul>
+        <h2>3. Third-party services</h2>
+        <p><strong>Groq Cloud:</strong> Processes article text for AI inference. Governed by <a href="https://groq.com/privacy-policy/" target="_blank">Groq's Privacy Policy</a>. Data is not retained for training.</p>
+        <p><strong>ExtensionPay / Stripe:</strong> Handles Pro payments. We never see card details. See <a href="https://extensionpay.com/privacy" target="_blank">ExtensionPay's Privacy Policy</a>.</p>
+        <p><strong>Google Favicon API:</strong> Public API to load source logos. No personal data transmitted.</p>
+        <h2>4. Your rights (GDPR)</h2>
+        <p>Clear your history anytime from the popup. Uninstalling the extension deletes all local data. For GDPR erasure requests: <a href="mailto:privacy@nuance.app">privacy@nuance.app</a></p>
       </div>
     </div>
 
-    <div class="privacy-panel" id="priv-pro">
-      <div class="privacy-doc">
-        <div class="privacy-content">
-          <h1>Nuance Pro — Subscription Privacy Policy</h1>
-          <span class="priv-date">Last updated: January 2025</span>
-
-          <h2>1. Scope</h2>
-          <p>This supplementary policy applies exclusively to users of the Nuance Pro paid subscription tier ("Pro Users"), in addition to the Extension Privacy Policy above.</p>
-
-          <h2>2. Data Collected for Pro Subscriptions</h2>
-          <ul>
-            <li><strong>Email address:</strong> Collected by ExtensionPay at the time of purchase to identify your subscription and manage account access.</li>
-            <li><strong>Payment information:</strong> Handled entirely by Stripe via ExtensionPay. We (Nuance) never see, store, or process your card details.</li>
-            <li><strong>Subscription status:</strong> Your paid/unpaid status is retrieved from ExtensionPay servers each time you open the extension, to unlock Pro features. This is a read-only operation and involves transmitting only your installation's unique ExtensionPay identifier.</li>
-          </ul>
-
-          <h2>3. Payment Processing</h2>
-          <p>All billing is handled by <strong>ExtensionPay</strong> (powered by <strong>Stripe</strong>). By subscribing, you agree to ExtensionPay's Terms of Service and Stripe's Privacy Policy. We do not store financial data of any kind.</p>
-
-          <h2>4. What Pro Unlocks (and What It Does Not Change)</h2>
-          <p>Upgrading to Pro does not change how the extension processes article content. The same privacy principles apply: article text is sent transiently to Groq, nothing is permanently stored server-side, and your reading data remains on your device.</p>
-
-          <h2>5. Subscription Management</h2>
-          <p>You may cancel your Pro subscription at any time by clicking "Manage Subscription" in the extension popup. Cancellation takes effect at the end of the current billing period. No refunds are provided for partial months.</p>
-
-          <h2>6. Account Deletion</h2>
-          <p>To delete your Pro account and all associated data, email <a href="mailto:privacy@nuance.app">privacy@nuance.app</a>. Your subscription will be cancelled and your email removed from ExtensionPay's records within 30 days.</p>
-
-          <h2>7. Data Transfers</h2>
-          <p>Your email address is stored by ExtensionPay, which operates within the United States. If you are based in the European Economic Area, this constitutes an international data transfer. ExtensionPay is compliant with applicable US-EU data transfer frameworks.</p>
-
-          <h2>8. Contact</h2>
-          <p>For subscription and billing enquiries: <a href="mailto:pro@nuance.app">pro@nuance.app</a></p>
-        </div>
+    <div id="pp-pro" class="priv-doc" style="display:none">
+      <div class="priv-in">
+        <h1>Pro Subscription Privacy Policy</h1>
+        <span class="date">Supplement to Extension Policy · January 2025</span>
+        <h2>1. Data collected for Pro users</h2>
+        <p><strong>Email address:</strong> Collected by ExtensionPay at purchase to manage your subscription. Not stored by Nuance directly.</p>
+        <p><strong>Payment data:</strong> Handled entirely by Stripe via ExtensionPay. We never see, store, or process card details.</p>
+        <p><strong>Subscription status:</strong> Your paid/unpaid status is retrieved from ExtensionPay each time the popup opens, to unlock Pro features. No browsing data is transmitted.</p>
+        <h2>2. Subscription management</h2>
+        <p>Cancel anytime via "Manage Subscription" in the extension popup. No partial refunds. Cancellation takes effect at end of billing period.</p>
+        <h2>3. Account deletion</h2>
+        <p>Email <a href="mailto:privacy@nuance.app">privacy@nuance.app</a> to cancel and delete all data within 30 days.</p>
+        <h2>4. International transfers</h2>
+        <p>ExtensionPay operates in the US. EU users: this constitutes an international transfer under GDPR-compatible frameworks (Standard Contractual Clauses).</p>
       </div>
     </div>
-
   </div>
 </section>
 
-<!-- ═══════ CTA STRIP ═══════ -->
-<section class="cta-strip">
-  <div class="section-inner" style="max-width:680px;">
-    <div class="chrome-badge reveal">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="4" fill="#4285F4"/><path d="M12 8h9.16a10 10 0 010 8H12" stroke="#EA4335" stroke-width="2"/><path d="M6.34 15L1.75 7.03A10 10 0 0012 22l4.6-7.97" stroke="#34A853" stroke-width="2"/><path d="M12 8L7.4 0.03A10 10 0 001.75 7.03L6.34 15" stroke="#FBBC05" stroke-width="2"/></svg>
-      Free for Chrome · No login required
-    </div>
-    <h2 class="section-title reveal">Start reading<br><strong>critically today.</strong></h2>
-    <p class="section-sub reveal" style="margin: 0 auto 48px; text-align:center;">Join the readers who no longer take headlines at face value. Install Nuance in 10 seconds.</p>
-    <div class="reveal" style="display:flex;justify-content:center;gap:14px;flex-wrap:wrap;">
-      <a href="https://chrome.google.com/webstore" target="_blank" class="btn-primary" style="font-size:16px;padding:16px 32px;border-radius:16px;">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm0 4a8 8 0 110 16A8 8 0 0112 4zm0 2a6 6 0 100 12A6 6 0 0012 6z"/></svg>
-        Add to Chrome — It's Free
-      </a>
-    </div>
-  </div>
+<!-- ═══ CTA FINAL ═══ -->
+<section class="cta-fin">
+  <div class="cta-tag">Free for Chrome · No account required</div>
+  <h2 class="stitle">Start reading<br><strong>critically today.</strong></h2>
+  <p class="ssub">Join the readers who no longer take headlines at face value. Install in 10 seconds.</p>
+  <a href="https://chrome.google.com/webstore" target="_blank" class="btn-blue" style="display:inline-flex;font-size:16px;padding:16px 36px;border-radius:16px;margin-top:52px">
+    Add to Chrome — It's Free
+  </a>
 </section>
 
-<!-- ═══════ FOOTER ═══════ -->
+<!-- ═══ FOOTER ═══ -->
 <footer>
-  <div class="footer-inner">
-    <div class="footer-brand">
-      <svg class="nuance-logo" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <rect width="36" height="36" rx="9" fill="url(#logo-bg2)"/>
-        <circle cx="14.5" cy="18" r="8.5" fill="url(#logo-c1b)" opacity="0.9"/>
-        <circle cx="21.5" cy="18" r="8.5" fill="url(#logo-c2b)" opacity="0.55"/>
+  <div class="ft">
+    <div class="ft-brand">
+      <svg width="22" height="22" viewBox="0 0 28 28" fill="none">
+        <rect width="28" height="28" rx="7" fill="url(#fb)"/>
+        <circle cx="11" cy="14" r="6.5" fill="url(#fc1)" opacity=".88"/>
+        <circle cx="17" cy="14" r="6.5" fill="url(#fc2)" opacity=".55"/>
         <defs>
-          <linearGradient id="logo-bg2" x1="0" y1="0" x2="36" y2="36" gradientUnits="userSpaceOnUse">
-            <stop stop-color="#1a2a3a"/><stop offset="1" stop-color="#0d1520"/>
-          </linearGradient>
-          <linearGradient id="logo-c1b" x1="6" y1="10" x2="23" y2="26" gradientUnits="userSpaceOnUse">
-            <stop stop-color="#3d5060"/><stop offset="1" stop-color="#2a3a48"/>
-          </linearGradient>
-          <linearGradient id="logo-c2b" x1="13" y1="10" x2="30" y2="26" gradientUnits="userSpaceOnUse">
-            <stop stop-color="#7dd5e0" stop-opacity="0.7"/><stop offset="1" stop-color="#2997ff" stop-opacity="0.5"/>
-          </linearGradient>
+          <linearGradient id="fb" x1="0" y1="0" x2="28" y2="28" gradientUnits="userSpaceOnUse"><stop stop-color="#1a2a3a"/><stop offset="1" stop-color="#0d1520"/></linearGradient>
+          <linearGradient id="fc1" x1="4" y1="8" x2="18" y2="20" gradientUnits="userSpaceOnUse"><stop stop-color="#3d5060"/><stop offset="1" stop-color="#2a3a48"/></linearGradient>
+          <linearGradient id="fc2" x1="10" y1="8" x2="24" y2="20" gradientUnits="userSpaceOnUse"><stop stop-color="#7dd5e0" stop-opacity=".75"/><stop offset="1" stop-color="#2997ff" stop-opacity=".5"/></linearGradient>
         </defs>
       </svg>
       Nuance
     </div>
-    <div class="footer-links">
+    <div class="ft-links">
       <a href="#features">Features</a>
       <a href="#pro">Pro</a>
+      <a href="#faq">FAQ</a>
       <a href="#privacy">Privacy</a>
       <a href="mailto:hello@nuance.app">Contact</a>
     </div>
-    <div class="footer-copy">© 2025 Nuance. All rights reserved.</div>
+    <div class="ft-copy">© 2025 Nuance. All rights reserved.</div>
   </div>
 </footer>
 
 <script>
-// ─── Scroll reveal ────────────────────────────────────────────────────────────
-const revealObs = new IntersectionObserver((entries) => {
-  entries.forEach(e => {
-    if (e.isIntersecting) {
-      e.target.classList.add('visible');
-      revealObs.unobserve(e.target);
-    }
-  });
-}, { threshold: 0.12, rootMargin: '0px 0px -40px 0px' });
+// ── GSAP register ──────────────────────────────────────────────
+gsap.registerPlugin(ScrollTrigger);
 
-document.querySelectorAll('.reveal').forEach(el => revealObs.observe(el));
-
-// ─── Counter animation ────────────────────────────────────────────────────────
-const counterObs = new IntersectionObserver((entries) => {
-  entries.forEach(e => {
-    if (!e.isIntersecting) return;
-    const el = e.target;
-    const target = parseInt(el.dataset.target, 10);
-    const duration = 1600;
-    const start = performance.now();
-    const initial = 0;
-    function update(now) {
-      const elapsed = now - start;
-      const progress = Math.min(elapsed / duration, 1);
-      const eased = 1 - Math.pow(1 - progress, 3);
-      el.textContent = Math.round(initial + (target - initial) * eased);
-      if (progress < 1) requestAnimationFrame(update);
-    }
-    requestAnimationFrame(update);
-    counterObs.unobserve(el);
-  });
-}, { threshold: 0.5 });
-
-document.querySelectorAll('.counter').forEach(el => counterObs.observe(el));
-
-// ─── Privacy tabs ─────────────────────────────────────────────────────────────
-document.querySelectorAll('.priv-tab-btn').forEach(btn => {
-  btn.addEventListener('click', () => {
-    document.querySelectorAll('.priv-tab-btn').forEach(b => b.classList.remove('active'));
-    document.querySelectorAll('.privacy-panel').forEach(p => p.classList.remove('active'));
-    btn.classList.add('active');
-    document.getElementById('priv-' + btn.dataset.tab).classList.add('active');
+// ── Smooth scroll (CSS-native, no Lenis needed) ────────────────
+// Override anchor clicks for offset
+document.querySelectorAll('a[href^="#"]').forEach(a => {
+  a.addEventListener('click', e => {
+    const t = document.querySelector(a.getAttribute('href'));
+    if (!t) return;
+    e.preventDefault();
+    const top = t.getBoundingClientRect().top + window.scrollY - 62;
+    window.scrollTo({ top, behavior: 'smooth' });
   });
 });
 
-// ─── Nav scroll effect ────────────────────────────────────────────────────────
+// ── Nav scroll state ───────────────────────────────────────────
 window.addEventListener('scroll', () => {
-  const nav = document.querySelector('nav');
-  if (window.scrollY > 40) {
-    nav.style.background = 'rgba(4,4,11,0.92)';
-  } else {
-    nav.style.background = 'rgba(4,4,11,0.7)';
-  }
+  document.getElementById('nav').classList.toggle('on', window.scrollY > 50);
 }, { passive: true });
 
-// ─── Parallax hero orbs ───────────────────────────────────────────────────────
-window.addEventListener('scroll', () => {
-  const y = window.scrollY;
-  const o1 = document.querySelector('.orb-1');
-  const o2 = document.querySelector('.orb-2');
-  if (o1) o1.style.transform = `translateY(${y * 0.15}px)`;
-  if (o2) o2.style.transform = `translateY(${y * 0.08}px)`;
+// ── Hero entrance ──────────────────────────────────────────────
+const tl = gsap.timeline({ defaults: { ease: 'power3.out' } });
+tl
+  .to('#he',  { opacity: 1, y: 0, duration: 0.7, delay: 0.1 })
+  .to('#hh1', { opacity: 1, y: 0, duration: 0.85 }, '-=0.45')
+  .to('#hh2', { opacity: 1, y: 0, duration: 0.85 }, '-=0.7')
+  .to('#hs',  { opacity: 1, y: 0, duration: 0.7 }, '-=0.55')
+  .to('#hb',  { opacity: 1, y: 0, duration: 0.65 }, '-=0.45')
+  .to('#hc',  { opacity: 1, y: 0, duration: 1, ease: 'back.out(1.2)' }, '-=0.35');
+
+// ── Card float ────────────────────────────────────────────────
+gsap.to('#hc .ext-card', {
+  y: -10, duration: 4.5, repeat: -1, yoyo: true, ease: 'power1.inOut', delay: 1.5
+});
+
+// ── Orb parallax ──────────────────────────────────────────────
+gsap.to('#o1', { y: 130, ease: 'none',
+  scrollTrigger: { trigger: '#hero', start: 'top top', end: 'bottom top', scrub: true }
+});
+gsap.to('#o2', { y: 80, ease: 'none',
+  scrollTrigger: { trigger: '#hero', start: 'top top', end: 'bottom top', scrub: true }
+});
+
+// ── Generic scroll reveal ──────────────────────────────────────
+const revealEls = [
+  '.prob-pts .pp',
+  '.fc',
+  '.step',
+  '.pfi',
+  '.review',
+  '.faq-item',
+];
+
+revealEls.forEach(sel => {
+  gsap.utils.toArray(sel).forEach((el, i) => {
+    gsap.from(el, {
+      opacity: 0, y: 36,
+      duration: 0.8, ease: 'power3.out',
+      delay: (i % 4) * 0.07,
+      scrollTrigger: { trigger: el, start: 'top 88%', once: true }
+    });
+  });
+});
+
+// Section heads
+['stitle', 'eyebrow', 'ssub'].forEach(cls => {
+  gsap.utils.toArray('.' + cls).forEach(el => {
+    gsap.from(el, {
+      opacity: 0, y: 24, duration: 0.9, ease: 'power3.out',
+      scrollTrigger: { trigger: el, start: 'top 90%', once: true }
+    });
+  });
+});
+
+// Feature hero card
+gsap.from('.fc-hero', {
+  opacity: 0, y: 32, duration: 1, ease: 'power3.out',
+  scrollTrigger: { trigger: '.fc-hero', start: 'top 88%', once: true }
+});
+
+// Feature cards — fade up with stagger per row
+gsap.utils.toArray('.feat-grid .fc').forEach((el, i) => {
+  gsap.from(el, {
+    opacity: 0, y: 28, duration: 0.8, ease: 'power3.out',
+    delay: (i % 3) * 0.08,
+    scrollTrigger: { trigger: el, start: 'top 90%', once: true }
+  });
+});
+
+// Pro card
+gsap.from('.pro-card-w', {
+  opacity: 0, y: 60, scale: 0.96, duration: 1.2, ease: 'power3.out',
+  scrollTrigger: { trigger: '.pro-card-w', start: 'top 82%', once: true }
+});
+gsap.to('.pro-card', {
+  y: -8, duration: 4, repeat: -1, yoyo: true, ease: 'power1.inOut'
+});
+
+// Timeline line draw (uses a real div #timeline-line, not a ::before pseudo-element)
+ScrollTrigger.create({
+  trigger: '.timeline', start: 'top 75%', once: true,
+  onEnter() {
+    const line = document.getElementById('timeline-line');
+    if (line) gsap.fromTo(line, { scaleY: 0 }, { scaleY: 1, duration: 1.5, ease: 'power2.out', transformOrigin: 'top' });
+  }
+});
+
+// ── Counter animation ─────────────────────────────────────────
+document.querySelectorAll('.cnt').forEach(el => {
+  const target = +el.dataset.to;
+  ScrollTrigger.create({
+    trigger: el, start: 'top 85%', once: true,
+    onEnter() {
+      const obj = { v: 0 };
+      gsap.to(obj, {
+        v: target, duration: 1.8, ease: 'power2.out',
+        onUpdate() { el.textContent = Math.round(obj.v); }
+      });
+    }
+  });
+});
+
+// ── Privacy tabs ──────────────────────────────────────────────
+document.querySelectorAll('.ptab').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.ptab').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    document.querySelectorAll('.priv-doc').forEach(p => { p.style.display = 'none'; });
+    const panel = document.getElementById('pp-' + btn.dataset.p);
+    if (panel) {
+      panel.style.display = 'block';
+      gsap.from(panel, { opacity: 0, y: 8, duration: 0.3, ease: 'power2.out' });
+    }
+  });
+});
+
+// ── FAQ accordion ─────────────────────────────────────────────
+document.querySelectorAll('.faq-q').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const item = btn.closest('.faq-item');
+    const isOpen = item.classList.contains('open');
+    document.querySelectorAll('.faq-item.open').forEach(i => i.classList.remove('open'));
+    if (!isOpen) item.classList.add('open');
+  });
+});
+
+// ── Subtle cursor glow on hero ────────────────────────────────
+const hero = document.getElementById('hero');
+hero.addEventListener('mousemove', e => {
+  const rect = hero.getBoundingClientRect();
+  const x = e.clientX - rect.left;
+  const y = e.clientY - rect.top;
+  gsap.to('#o2', { x: (x - rect.width/2) * 0.04, y: (y - rect.height/2) * 0.03, duration: 1.2, ease: 'power2.out' });
 }, { passive: true });
 </script>
 </body>

@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "__MSG_appName__",
-  "version": "1.4",
+  "version": "1.5",
   "description": "__MSG_appDescription__",
   "default_locale": "en",
 
@@ -13,7 +13,8 @@
   ],
 
   "host_permissions": [
-    "<all_urls>"
+    "<all_urls>",
+    "https://nuance-proxy-7eggf5jtm-miguel-ferreiras-projects-5edf6fa0.vercel.app/*"
   ],
 
   "background": {
@@ -39,7 +40,6 @@
       "16":  "icons/icon16.png",
       "48":  "icons/icon48.png",
       "128": "icons/icon128.png"
-
     }
   }
 }
