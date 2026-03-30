@@ -13,7 +13,7 @@
 
   "host_permissions": [
     "<all_urls>",
-    "https://nuance-proxy-7eggf5jtm-miguel-ferreiras-projects-5edf6fa0.vercel.app/*"
+    "https://nuance-proxy.vercel.app/*"
   ],
 
   "background": {

@@ -4,7 +4,7 @@
 console.log("🧠 Nuance Service Worker initializing…");
 
 // ⚠️  Replace with your actual Vercel deployment URL after running `vercel deploy`
-const PROXY_BASE = 'https://nuance-proxy-7eggf5jtm-miguel-ferreiras-projects-5edf6fa0.vercel.app';
+const PROXY_BASE = 'https://nuance-proxy.vercel.app/';
 
 try {
     importScripts('ExtPay.js');
